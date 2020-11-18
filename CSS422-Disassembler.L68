@@ -1,0 +1,138 @@
+00001000 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 11/17/2020 5:43:39 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      :
+00000000                             3  * Written by :
+00000000                             4  * Date       :
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00001000                             7      ORG    $1000
+00001000                             8  *=================================================================
+00001000                             9  *                     THIS IS OUR MAIN METHOD
+00001000                            10  *               Don't throw random stuff in it, keep it to a minimum
+00001000                            11  
+00001000                            12  START:                  ; first instruction of program
+00001000  4EB9 00001006             13          JSR     GETINPUT
+00001006                            14  
+00001006                            15  GETINPUT:
+00001006  43F9 000010E0             16          LEA     WELCOME, A1
+0000100C  103C 000E                 17          MOVE.B  #14,    D0
+00001010  4E4F                      18          TRAP    #15
+00001012  327C 0000                 19          MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
+00001016  103C 0002                 20          MOVE.B  #2,D0
+0000101A  4E4F                      21          TRAP    #15
+0000101C  2801                      22          MOVE.L  D1, D4   // Move input length into D4, See Convert Pre conditon
+0000101E  7000                      23          MOVE.L  #$0, d0  // intitiate counter
+00001020  4EB9 00001060             24          JSR     LOOP    // Convert starting address into hex
+00001026  23C5 0000111E             25          MOVE.L  D5, addrStart
+0000102C  43F9 00001100             26          LEA     WELCOME2, A1
+00001032  103C 000E                 27          MOVE.B  #14,    D0
+00001036  4E4F                      28          TRAP    #15
+00001038  327C 0000                 29          MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
+0000103C  103C 0002                 30          MOVE.B  #2,D0
+00001040  4E4F                      31          TRAP    #15
+00001042  23C5 00001122             32          MOVE.L  D5, addrEnd
+00001048  1801                      33          MOVE.B  D1, D4   // Move input length into D4, See Convert Pre conditon
+0000104A  103C 0000                 34          MOVE.B  #$0, d0  // intitiate counter
+0000104E  4EB9 00001060             35          JSR     LOOP    // Convert starting address into hex
+00001054  4EF9 0000105A             36          JMP     END
+0000105A                            37  END:
+0000105A  103C 0009                 38          MOVE.B  #9, D0
+0000105E  4E4F                      39          TRAP    #15
+00001060                            40  LOOP
+00001060  B880                      41          CMP.L   D0, D4  // Loop until length of word reached
+00001062  6E00 0004                 42          BGT     CONVERT
+00001066  4E75                      43          RTS 
+00001068                            44  
+00001068                            45  *=================================================================
+00001068                            46  *---------------NUMBER CONVERSION FROM INPUT TO HEX------- Kelvin
+00001068                            47  *PRE      D4 must contain input length, d0 must be 0
+00001068                            48  *POST     D5 WILL CONTAIN ADDRESS VALUE IN HEX        
+00001068                            49  CONVERT:
+00001068  5280                      50          ADDQ.L  #$1, D0 // increment counter
+0000106A  1211                      51          move.b  (A1),D1    // Get next bit from Input
+0000106C  5289                      52          adda.L  #1, A1      // Increment Input
+0000106E  0401 0030                 53          sub.b   #$30,D1     //
+00001072  B23C 0010                 54          cmp.b   #$10,D1   // Check if value is larger than 10
+00001076  6E00 000A                 55          bgt     CHAR      // Find Hex
+0000107A  1401                      56          move.b  D1, D2    // IF it is less than 10
+0000107C  4EF9 000010B2             57          JMP     ADDVAL        
+00001082                            58  CHAR:
+00001082  B23C 0011                 59          CMP.B   #$11, D1 // Convert each hex into an appropriate hex
+00001086  6700 0030                 60          BEQ     A
+0000108A  B23C 0012                 61          CMP.B   #$12, D1
+0000108E  6700 002E                 62          BEQ     B
+00001092  B23C 0013                 63          CMP.B   #$13, D1
+00001096  6700 002C                 64          BEQ     C
+0000109A  B23C 0014                 65          CMP.B   #$14, D1
+0000109E  6700 002A                 66          BEQ     D
+000010A2  B23C 0015                 67          CMP.B   #$15, D1
+000010A6  6700 0028                 68          BEQ     E
+000010AA  B23C 0016                 69          CMP.B   #$16, D1
+000010AE  6700 0026                 70          BEQ     F
+000010B2                            71  
+000010B2                            72  ADDVAL:
+000010B2  E98D                      73          lsl.l    #$4, D5 // Shift based on position
+000010B4  DA82                      74          add.l    D2, D5 //Add value into Input
+000010B6  60A8                      75          BRA      LOOP
+000010B8                            76      
+000010B8                            77  A:
+000010B8  740A                      78          MOVE.L  #$A, D2 
+000010BA  4EF8 10B2                 79          jmp ADDVAL
+000010BE                            80  B:
+000010BE  740B                      81          MOVE.L  #$B, D2
+000010C0  4EF8 10B2                 82          jmp ADDVAL
+000010C4                            83  C:
+000010C4  740C                      84          MOVE.L  #$C, D2
+000010C6  4EF8 10B2                 85          jmp ADDVAL
+000010CA                            86  D:
+000010CA  740D                      87          MOVE.L  #$D, D2
+000010CC  4EF8 10B2                 88          jmp ADDVAL
+000010D0                            89  E:
+000010D0  740E                      90          MOVE.L  #$E, D2
+000010D2  4EF8 10B2                 91          jmp ADDVAL
+000010D6                            92  F:
+000010D6  740F                      93          MOVE.L  #$F, D2
+000010D8  4EF8 10B2                 94          jmp ADDVAL
+000010DC                            95          
+000010DC                            96  * Put program code here
+000010DC                            97  
+000010DC  FFFF FFFF                 98      SIMHALT             ; halt simulator
+000010E0                            99  
+000010E0                           100  * Put variables and constants here
+000010E0  =0000000D                101  CR  EQU $0D
+000010E0  =0000000A                102  LF  EQU $0A
+000010E0= 50 6C 65 61 73 65 ...    103  WELCOME     DC.B    'Please enter starting address',CR, LF, 0
+00001100= 50 6C 65 61 73 65 ...    104  WELCOME2    DC.B    'Please enter ending address',CR, LF, 0
+0000111E= 00000001                 105  addrStart   DC.L    1
+00001122= 00000001                 106  addrEnd     DC.L    1
+00001126                           107      END    START        ; last line of source
+
+No errors detected
+No warnings generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+A                   10B8
+ADDREND             1122
+ADDRSTART           111E
+ADDVAL              10B2
+B                   10BE
+C                   10C4
+CHAR                1082
+CONVERT             1068
+CR                  D
+D                   10CA
+E                   10D0
+END                 105A
+F                   10D6
+GETINPUT            1006
+LF                  A
+LOOP                1060
+START               1000
+WELCOME             10E0
+WELCOME2            1100
