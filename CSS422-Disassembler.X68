@@ -14,7 +14,7 @@ START:                  ; first instruction of program
 *=================================================================
 *---------------Get starting and ending addresss------- Kelvin
 *--------------- PRE: will be using D0, D5, A1
-*----------------Post Address will be stored in addrStart and addrEnd
+*----------------Post: Address will be stored in addrStart and addrEnd
 GETINPUT:
         LEA     WELCOME, A1
         MOVE.B  #14,    D0
@@ -33,9 +33,13 @@ GETINPUT:
         MOVE.B  #2,D0
         TRAP    #15
         MOVE.L  D5, addrEnd
+        CLR     D5       // Clear D5 for exit address
         MOVE.B  D1, D4   // Move input length into D4, See Convert Pre conditon
         MOVE.B  #$0, d0  // intitiate counter
-        JSR     LOOP    // Convert starting address into hex
+        JSR     LOOP    // Convert Ending address int Hex
+        MOVE.W  #$2200, $6000 
+        LEA $6000, A2
+        JSR     OPCODE
         JMP     END
 END:
         MOVE.B  #9, D0
@@ -96,6 +100,55 @@ F:
         MOVE.L  #$F, D2
         jmp ADDVAL
         
+*=======================================================================
+*---------Find the first 4 of instruction and determines the instruction
+OPCODE:
+        JSR     CLRREG
+        MOVE.W  (A2), D1
+        MOVE.B  D1, D2  //D2 now containse the opperand EA!!!
+        LSR.W   #4, D1
+        LSR.W   #4, D1
+        LSR.W   #4, D1  //Right Shift 3 times
+        MOVE.B  D1, D0  // OPCODE FOUND
+        MULU    #6, D0
+        LEA     JMPTABLE, A2
+        JSR     (A2, D0)
+        
+JMPTABLE
+        JMP     OP0000
+        JMP     OP0001
+        JMP     OP0010 
+         
+OP0000:
+OP0001:
+OP0010:
+        LEA     MOVEL, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        
+
+
+EA:
+        LSL.L   #8, D2 // Remove first 20 bits to get opperand
+        LSL.L   #8, D2
+        LSL.L   #4, D2
+        LSR.L   #8, D2
+        LSR.L   #8, D2
+        LSR.L   #4, D2
+        
+         
+       
+CLRREG:
+    CLR D1
+    CLR D2
+    CLR D3
+    CLR D4
+    CLR D5
+    CLR D6
+    RTS
+    
+    
+        
 * Put program code here
 
     SIMHALT             ; halt simulator
@@ -105,9 +158,11 @@ CR  EQU $0D
 LF  EQU $0A
 WELCOME     DC.B    'Please enter starting address',CR, LF, 0
 WELCOME2    DC.B    'Please enter ending address',CR, LF, 0
-addrStart   DC.L    1
-addrEnd     DC.L    1
+MOVEL       DC.B    'MOVE.L ', 0
+addrStart   DC.L    1   // Starting address
+addrEnd     DC.L    1   // ending address
     END    START        ; last line of source
+
 
 
 
