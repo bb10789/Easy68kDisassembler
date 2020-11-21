@@ -37,8 +37,8 @@ GETINPUT:
         MOVE.B  D1, D4   // Move input length into D4, See Convert Pre conditon
         MOVE.B  #$0, d0  // intitiate counter
         JSR     LOOP    // Convert Ending address int Hex
-        MOVE.W  #$2200, $6000 
-        LEA $6000, A2
+        MOVE.W  #$2200, $6000 // MOVE.L D0, D1, used for testing only
+        LEA $6000, A2 //testing
         JSR     OPCODE
         JMP     END
 END:
@@ -112,8 +112,11 @@ OPCODE:
         MOVE.B  D1, D0  // OPCODE FOUND
         MULU    #6, D0
         LEA     JMPTABLE, A2
-        JSR     (A2, D0)
+        JMP     (A2, D0)
         
+*========================================================================
+*--------Jump table used for different opcode!!! Please orgainze well using decimal
+*------- Add your instructions here
 JMPTABLE
         JMP     OP0000
         JMP     OP0001
@@ -121,15 +124,21 @@ JMPTABLE
          
 OP0000:
 OP0001:
+* -> MOVE.L
+* Printed using MOVEL String as a variable on the very bottom
 OP0010:
         LEA     MOVEL, A1
         MOVE.B  #14, D0
         TRAP    #15
         BRA     EA
-        RTS
         
-
-
+        
+        
+* EA STARTS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+*=================================================================
+*-----------EA-- Calculate EA used for Data Registers
+*----------Pre: D2, D0, D1 must be clear
+*----------POST: prints out EA, D0 will store Data Register #, D1 will store EA MODE
 EA:
         LSL.L   #8, D2 // Remove first 20 bits to get opperand
         LSL.L   #8, D2
@@ -143,14 +152,19 @@ EA:
         MOVE.B  D2, D1 *Source Data Mode
         LSL.B   #2, D1
         LSR.B   #5, D1
+*=================================================
+*-----------EA CHECKER------Continues from EA
+*-----------Pre: D1 must contain the Mode of EA        
+* TODO: ERROR CHECKING, OTHER MODES other than D0
 EACHECKER: 
         CMP.B   #$000, D1
         BEQ     JMPTOSRCREG
 JMPTOSRCREG:
         LEA     DATAREGTABLE, A1
-        MULU    #6, D0
-        JSR     (A1, D0)
+        MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
+        JSR     (A1, D0) *JMP To index A1 + D0
         * EA CONTINUES HERE
+        JSR     PRINTCOMMA  * Prints comma between two operrands
         LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
         CLR     D1     * Clear D1 and D0 for opperand mode and register
         CLR     D0
@@ -161,15 +175,18 @@ JMPTOSRCREG:
         LSL.B   #2, D0
         LSR.B   #5, D0
         CMP.B   #$000, D1 * EA CHECKS BEGIN
-        BEQ     JMPTOENDREG
-JMPTOENDREG:
+        BEQ     JMPTODESTREG
+JMPToDestReg: *PRINT OUT DEST Registers
         LEA     DATAREGTABLE, A1
-        MULU    #6, D0
-        JSR     (A1, D0)
+        MULU    #6, D0 * Multiply by 6 bc Each index between jmp table diff is 6
+        JSR     (A1, D0) *JMP to A1 + D0
+        RTS
         
 
         
-        
+*=================================================================
+*---------Data Register Table used for printing out Registers----
+*----------Starts from index and use JRS (x,y) to jump to certain index, multiply by #6
 DataRegTable
         JMP REG_D0
         JMP REG_D1
@@ -181,48 +198,60 @@ DataRegTable
         JMP REG_D7
         
 REG_D0:
+        MOVEA.L #$0, A1
         LEA     DREG0, A1
+        MOVE.B  #14, D0
         TRAP    #15
         RTS
         
 REG_D1:
         LEA     DREG1, A1
+        MOVE.B  #14, D0
         TRAP    #15
         RTS
 REG_D2:
         LEA     DREG2, A1
+        MOVE.B  #14, D0
         TRAP    #15
         RTS
 REG_D3:
         LEA     DREG3, A1
+        MOVE.B  #14, D0
         TRAP    #15
         RTS
 REG_D4:
         LEA     DREG4, A1
+        MOVE.B  #14, D0
         TRAP    #15
         RTS
 REG_D5:
         LEA     DREG5, A1
+        MOVE.B  #14, D0
         TRAP    #15
         RTS
 REG_D6:
         LEA     DREG6, A1
+        MOVE.B  #14, D0
         TRAP    #15
         RTS
 REG_D7:
         LEA     DREG7, A1
+        MOVE.B  #14, D0
         TRAP    #15
         RTS
         
-PRINTCOMMA:
-        
+PRINTCOMMA: * Prints comma between two operrands
+        LEA     COMMA, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        RTS
         
 
         
         
         
          
-       
+* Clear all registers    
 CLRREG:
     CLR D1
     CLR D2
