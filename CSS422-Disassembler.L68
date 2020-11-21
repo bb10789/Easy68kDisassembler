@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 11/20/2020 3:21:31 PM
+Created On: 11/20/2020 7:36:17 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :
@@ -20,7 +20,7 @@ Created On: 11/20/2020 3:21:31 PM
 00001006                            16  *--------------- PRE: will be using D0, D5, A1
 00001006                            17  *----------------Post: Address will be stored in addrStart and addrEnd
 00001006                            18  GETINPUT:
-00001006  43F9 0000113E             19          LEA     WELCOME, A1
+00001006  43F9 0000121A             19          LEA     WELCOME, A1
 0000100C  103C 000E                 20          MOVE.B  #14,    D0
 00001010  4E4F                      21          TRAP    #15
 00001012  327C 0000                 22          MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
@@ -29,14 +29,14 @@ Created On: 11/20/2020 3:21:31 PM
 0000101C  2801                      25          MOVE.L  D1, D4   // Move input length into D4, See Convert Pre conditon
 0000101E  7000                      26          MOVE.L  #$0, d0  // intitiate counter
 00001020  4EB9 00001072             27          JSR     LOOP    // Convert starting address into hex
-00001026  23C5 00001184             28          MOVE.L  D5, addrStart
-0000102C  43F9 0000115E             29          LEA     WELCOME2, A1
+00001026  23C5 0000127C             28          MOVE.L  D5, addrStart
+0000102C  43F9 0000123A             29          LEA     WELCOME2, A1
 00001032  103C 000E                 30          MOVE.B  #14,    D0
 00001036  4E4F                      31          TRAP    #15
 00001038  327C 0000                 32          MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
 0000103C  103C 0002                 33          MOVE.B  #2,D0
 00001040  4E4F                      34          TRAP    #15
-00001042  23C5 00001188             35          MOVE.L  D5, addrEnd
+00001042  23C5 00001280             35          MOVE.L  D5, addrEnd
 00001048  4245                      36          CLR     D5       // Clear D5 for exit address
 0000104A  1801                      37          MOVE.B  D1, D4   // Move input length into D4, See Convert Pre conditon
 0000104C  103C 0000                 38          MOVE.B  #$0, d0  // intitiate counter
@@ -107,9 +107,9 @@ Created On: 11/20/2020 3:21:31 PM
 000010EE                           103  *=======================================================================
 000010EE                           104  *---------Find the first 4 of instruction and determines the instruction
 000010EE                           105  OPCODE:
-000010EE  4EB9 0000112C            106          JSR     CLRREG
+000010EE  4EB9 00001208            106          JSR     CLRREG
 000010F4  3212                     107          MOVE.W  (A2), D1
-000010F6  1401                     108          MOVE.B  D1, D2  //D2 now containse the opperand EA!!!
+000010F6  2401                     108          MOVE.L  D1, D2  //D2 now containse the opperand EA!!!
 000010F8  E849                     109          LSR.W   #4, D1
 000010FA  E849                     110          LSR.W   #4, D1
 000010FC  E849                     111          LSR.W   #4, D1  //Right Shift 3 times
@@ -126,37 +126,148 @@ Created On: 11/20/2020 3:21:31 PM
 00001120                           122  OP0000:
 00001120                           123  OP0001:
 00001120                           124  OP0010:
-00001120  43F9 0000117C            125          LEA     MOVEL, A1
+00001120  43F9 0000125B            125          LEA     MOVEL, A1
 00001126  103C 000E                126          MOVE.B  #14, D0
 0000112A  4E4F                     127          TRAP    #15
-0000112C                           128          
-0000112C                           129  
-0000112C                           130  
-0000112C                           131  
-0000112C                           132           
-0000112C                           133         
-0000112C                           134  CLRREG:
-0000112C  4241                     135      CLR D1
-0000112E  4242                     136      CLR D2
-00001130  4243                     137      CLR D3
-00001132  4244                     138      CLR D4
-00001134  4245                     139      CLR D5
-00001136  4246                     140      CLR D6
-00001138  4E75                     141      RTS
-0000113A                           142          
-0000113A                           143  * Put program code here
-0000113A                           144  
-0000113A  FFFF FFFF                145      SIMHALT             ; halt simulator
-0000113E                           146  
-0000113E                           147  * Put variables and constants here
-0000113E  =0000000D                148  CR  EQU $0D
-0000113E  =0000000A                149  LF  EQU $0A
-0000113E= 50 6C 65 61 73 65 ...    150  WELCOME     DC.B    'Please enter starting address',CR, LF, 0
-0000115E= 50 6C 65 61 73 65 ...    151  WELCOME2    DC.B    'Please enter ending address',CR, LF, 0
-0000117C= 4D 4F 56 45 2E 4C ...    152  MOVEL       DC.B    'MOVE.L ', 0
-00001184= 00000001                 153  addrStart   DC.L    1   // Starting address
-00001188= 00000001                 154  addrEnd     DC.L    1   // ending address
-0000118C                           155      END    START        ; last line of source
+0000112C  6000 0004                128          BRA     EA
+00001130  4E75                     129          RTS
+00001132                           130          
+00001132                           131  
+00001132                           132  
+00001132                           133  EA:
+00001132  E18A                     134          LSL.L   #8, D2 // Remove first 20 bits to get opperand
+00001134  E18A                     135          LSL.L   #8, D2
+00001136  E98A                     136          LSL.L   #4, D2
+00001138  E08A                     137          LSR.L   #8, D2
+0000113A  E08A                     138          LSR.L   #8, D2
+0000113C  E88A                     139          LSR.L   #4, D2 // 12 bits of opperand found
+0000113E  1002                     140          MOVE.B  D2, D0 Source Data Register
+00001140  EB08                     141          LSL.B   #5, D0
+00001142  EA08                     142          LSR.B   #5, D0
+00001144  1202                     143          MOVE.B  D2, D1 *Source Data Mode
+00001146  E509                     144          LSL.B   #2, D1
+00001148  EA09                     145          LSR.B   #5, D1
+0000114A                           146  EACHECKER: 
+0000114A  B23C 0000                147          CMP.B   #$000, D1
+0000114E  6700 0002                148          BEQ     JMPTOSRCREG
+00001152                           149  JMPTOSRCREG:
+00001152  43F9 00001188            150          LEA     DATAREGTABLE, A1
+00001158  C0FC 0006                151          MULU    #6, D0
+0000115C  4EB1 0000                152          JSR     (A1, D0)
+00001160                           153          * EA CONTINUES HERE
+00001160  EC8A                     154          LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
+00001162  4241                     155          CLR     D1     * Clear D1 and D0 for opperand mode and register
+00001164  4240                     156          CLR     D0
+00001166  1202                     157          MOVE.B  D2, D1 * Prepare D1 for Mode
+00001168  EB09                     158          LSL.B   #5, D1  * Shift 5 bits to get rid of Register and size
+0000116A  EA09                     159          LSR.B   #5, D1
+0000116C  1002                     160          MOVE.B  D2, D0  *Prepare D0 for Register
+0000116E  E508                     161          LSL.B   #2, D0
+00001170  EA08                     162          LSR.B   #5, D0
+00001172  B23C 0000                163          CMP.B   #$000, D1 * EA CHECKS BEGIN
+00001176  6700 0002                164          BEQ     JMPTOENDREG
+0000117A                           165  JMPTOENDREG:
+0000117A  43F9 00001188            166          LEA     DATAREGTABLE, A1
+00001180  C0FC 0006                167          MULU    #6, D0
+00001184  4EB1 0000                168          JSR     (A1, D0)
+00001188                           169          
+00001188                           170  
+00001188                           171          
+00001188                           172          
+00001188                           173  DataRegTable
+00001188  4EF9 000011B8            174          JMP REG_D0
+0000118E  4EF9 000011C2            175          JMP REG_D1
+00001194  4EF9 000011CC            176          JMP REG_D2
+0000119A  4EF9 000011D6            177          JMP REG_D3
+000011A0  4EF9 000011E0            178          JMP REG_D4
+000011A6  4EF9 000011EA            179          JMP REG_D5
+000011AC  4EF9 000011F4            180          JMP REG_D6
+000011B2  4EF9 000011FE            181          JMP REG_D7
+000011B8                           182          
+000011B8                           183  REG_D0:
+000011B8  43F9 00001263            184          LEA     DREG0, A1
+000011BE  4E4F                     185          TRAP    #15
+000011C0  4E75                     186          RTS
+000011C2                           187          
+000011C2                           188  REG_D1:
+000011C2  43F9 00001266            189          LEA     DREG1, A1
+000011C8  4E4F                     190          TRAP    #15
+000011CA  4E75                     191          RTS
+000011CC                           192  REG_D2:
+000011CC  43F9 00001269            193          LEA     DREG2, A1
+000011D2  4E4F                     194          TRAP    #15
+000011D4  4E75                     195          RTS
+000011D6                           196  REG_D3:
+000011D6  43F9 0000126C            197          LEA     DREG3, A1
+000011DC  4E4F                     198          TRAP    #15
+000011DE  4E75                     199          RTS
+000011E0                           200  REG_D4:
+000011E0  43F9 0000126F            201          LEA     DREG4, A1
+000011E6  4E4F                     202          TRAP    #15
+000011E8  4E75                     203          RTS
+000011EA                           204  REG_D5:
+000011EA  43F9 00001272            205          LEA     DREG5, A1
+000011F0  4E4F                     206          TRAP    #15
+000011F2  4E75                     207          RTS
+000011F4                           208  REG_D6:
+000011F4  43F9 00001275            209          LEA     DREG6, A1
+000011FA  4E4F                     210          TRAP    #15
+000011FC  4E75                     211          RTS
+000011FE                           212  REG_D7:
+000011FE  43F9 00001278            213          LEA     DREG7, A1
+00001204  4E4F                     214          TRAP    #15
+00001206  4E75                     215          RTS
+00001208                           216          
+00001208                           217  PRINTCOMMA:
+00001208                           218          
+00001208                           219          
+00001208                           220  
+00001208                           221          
+00001208                           222          
+00001208                           223          
+00001208                           224           
+00001208                           225         
+00001208                           226  CLRREG:
+00001208  4241                     227      CLR D1
+0000120A  4242                     228      CLR D2
+0000120C  4243                     229      CLR D3
+0000120E  4244                     230      CLR D4
+00001210  4245                     231      CLR D5
+00001212  4246                     232      CLR D6
+00001214  4E75                     233      RTS
+00001216                           234      
+00001216                           235      
+00001216                           236          
+00001216                           237  * Put program code here
+00001216                           238  
+00001216  FFFF FFFF                239      SIMHALT             ; halt simulator
+0000121A                           240  
+0000121A                           241  * Put variables and constants here
+0000121A  =0000000D                242  CR  EQU $0D
+0000121A  =0000000A                243  LF  EQU $0A
+0000121A= 50 6C 65 61 73 65 ...    244  WELCOME     DC.B    'Please enter starting address',CR, LF, 0
+0000123A= 50 6C 65 61 73 65 ...    245  WELCOME2    DC.B    'Please enter ending address',CR, LF, 0
+00001258                           246  
+00001258= 2C 20 00                 247  COMMA       DC.B    ', ', 0
+0000125B                           248  
+0000125B                           249  
+0000125B= 4D 4F 56 45 2E 4C ...    250  MOVEL       DC.B    'MOVE.L ', 0
+00001263                           251  
+00001263                           252  
+00001263                           253  *DATA REGISTERS PRINTOUT
+00001263= 44 30 00                 254  DREG0       DC.B    'D0', 0
+00001266= 44 31 00                 255  DREG1       DC.B    'D1', 0
+00001269= 44 32 00                 256  DREG2       DC.B    'D2', 0
+0000126C= 44 33 00                 257  DREG3       DC.B    'D3', 0
+0000126F= 44 34 00                 258  DREG4       DC.B    'D4', 0
+00001272= 44 35 00                 259  DREG5       DC.B    'D5', 0
+00001275= 44 36 00                 260  DREG6       DC.B    'D6', 0
+00001278= 44 37 00                 261  DREG7       DC.B    'D7', 0 
+0000127B                           262  
+0000127B                           263  
+0000127C= 00000001                 264  addrStart   DC.L    1   // Starting address
+00001280= 00000001                 265  addrEnd     DC.L    1   // ending address
+00001284                           266      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -166,28 +277,51 @@ SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
 A                   10CA
-ADDREND             1188
-ADDRSTART           1184
+ADDREND             1280
+ADDRSTART           127C
 ADDVAL              10C4
 B                   10D0
 C                   10D6
 CHAR                1094
-CLRREG              112C
+CLRREG              1208
+COMMA               1258
 CONVERT             107A
 CR                  D
 D                   10DC
+DATAREGTABLE        1188
+DREG0               1263
+DREG1               1266
+DREG2               1269
+DREG3               126C
+DREG4               126F
+DREG5               1272
+DREG6               1275
+DREG7               1278
 E                   10E2
+EA                  1132
+EACHECKER           114A
 END                 106C
 F                   10E8
 GETINPUT            1006
 JMPTABLE            110E
+JMPTOENDREG         117A
+JMPTOSRCREG         1152
 LF                  A
 LOOP                1072
-MOVEL               117C
+MOVEL               125B
 OP0000              1120
 OP0001              1120
 OP0010              1120
 OPCODE              10EE
+PRINTCOMMA          1208
+REG_D0              11B8
+REG_D1              11C2
+REG_D2              11CC
+REG_D3              11D6
+REG_D4              11E0
+REG_D5              11EA
+REG_D6              11F4
+REG_D7              11FE
 START               1000
-WELCOME             113E
-WELCOME2            115E
+WELCOME             121A
+WELCOME2            123A

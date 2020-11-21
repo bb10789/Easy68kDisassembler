@@ -105,7 +105,7 @@ F:
 OPCODE:
         JSR     CLRREG
         MOVE.W  (A2), D1
-        MOVE.B  D1, D2  //D2 now containse the opperand EA!!!
+        MOVE.L  D1, D2  //D2 now containse the opperand EA!!!
         LSR.W   #4, D1
         LSR.W   #4, D1
         LSR.W   #4, D1  //Right Shift 3 times
@@ -125,6 +125,8 @@ OP0010:
         LEA     MOVEL, A1
         MOVE.B  #14, D0
         TRAP    #15
+        BRA     EA
+        RTS
         
 
 
@@ -134,7 +136,90 @@ EA:
         LSL.L   #4, D2
         LSR.L   #8, D2
         LSR.L   #8, D2
-        LSR.L   #4, D2
+        LSR.L   #4, D2 // 12 bits of opperand found
+        MOVE.B  D2, D0 Source Data Register
+        LSL.B   #5, D0
+        LSR.B   #5, D0
+        MOVE.B  D2, D1 *Source Data Mode
+        LSL.B   #2, D1
+        LSR.B   #5, D1
+EACHECKER: 
+        CMP.B   #$000, D1
+        BEQ     JMPTOSRCREG
+JMPTOSRCREG:
+        LEA     DATAREGTABLE, A1
+        MULU    #6, D0
+        JSR     (A1, D0)
+        * EA CONTINUES HERE
+        LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
+        CLR     D1     * Clear D1 and D0 for opperand mode and register
+        CLR     D0
+        MOVE.B  D2, D1 * Prepare D1 for Mode
+        LSL.B   #5, D1  * Shift 5 bits to get rid of Register and size
+        LSR.B   #5, D1
+        MOVE.B  D2, D0  *Prepare D0 for Register
+        LSL.B   #2, D0
+        LSR.B   #5, D0
+        CMP.B   #$000, D1 * EA CHECKS BEGIN
+        BEQ     JMPTOENDREG
+JMPTOENDREG:
+        LEA     DATAREGTABLE, A1
+        MULU    #6, D0
+        JSR     (A1, D0)
+        
+
+        
+        
+DataRegTable
+        JMP REG_D0
+        JMP REG_D1
+        JMP REG_D2
+        JMP REG_D3
+        JMP REG_D4
+        JMP REG_D5
+        JMP REG_D6
+        JMP REG_D7
+        
+REG_D0:
+        LEA     DREG0, A1
+        TRAP    #15
+        RTS
+        
+REG_D1:
+        LEA     DREG1, A1
+        TRAP    #15
+        RTS
+REG_D2:
+        LEA     DREG2, A1
+        TRAP    #15
+        RTS
+REG_D3:
+        LEA     DREG3, A1
+        TRAP    #15
+        RTS
+REG_D4:
+        LEA     DREG4, A1
+        TRAP    #15
+        RTS
+REG_D5:
+        LEA     DREG5, A1
+        TRAP    #15
+        RTS
+REG_D6:
+        LEA     DREG6, A1
+        TRAP    #15
+        RTS
+REG_D7:
+        LEA     DREG7, A1
+        TRAP    #15
+        RTS
+        
+PRINTCOMMA:
+        
+        
+
+        
+        
         
          
        
@@ -158,7 +243,24 @@ CR  EQU $0D
 LF  EQU $0A
 WELCOME     DC.B    'Please enter starting address',CR, LF, 0
 WELCOME2    DC.B    'Please enter ending address',CR, LF, 0
+
+COMMA       DC.B    ', ', 0
+
+
 MOVEL       DC.B    'MOVE.L ', 0
+
+
+*DATA REGISTERS PRINTOUT
+DREG0       DC.B    'D0', 0
+DREG1       DC.B    'D1', 0
+DREG2       DC.B    'D2', 0
+DREG3       DC.B    'D3', 0
+DREG4       DC.B    'D4', 0
+DREG5       DC.B    'D5', 0
+DREG6       DC.B    'D6', 0
+DREG7       DC.B    'D7', 0 
+
+
 addrStart   DC.L    1   // Starting address
 addrEnd     DC.L    1   // ending address
     END    START        ; last line of source
