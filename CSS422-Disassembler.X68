@@ -37,15 +37,20 @@ GETINPUT:
         MOVE.B  D1, D4   // Move input length into D4, See Convert Pre conditon
         MOVE.B  #$0, d0  // intitiate counter
         JSR     LOOP    // Convert Ending address int Hex
-        *MOVE.L  (A1)+, (A2)+   // Testing
-        MOVE.W  #$24D9, $6000 // MOVE.L D0, D1, used for testing only
+       * MOVEA.L  D0, A0   // Testing
+        MOVE.W  #$9B91, $6000 // MOVE.L D0, D1, used for testing only
         LEA     $6000, A2 //testing
         JSR     OPCODE
         JMP     END
 END:
         MOVE.B  #9, D0
         TRAP    #15
+        
+*Please start from here Annabelle
+AddrLoop:
+        BRA     END     // DELETE THIS WHEN UR WORKING ON IT ANNABELLE!!!!!!!
 LOOP
+
         CMP.L   D0, D4  // Loop until length of word reached
         BGT     CONVERT
         ADD.L   #$2, D0 
@@ -121,27 +126,198 @@ OPCODE:
 *------- Add your instructions here
 JMPTABLE
         JMP     OP0000
-        JMP     OP0001
-        JMP     OP0010 
+        JMP     OP0001 *MOVEB
+        JMP     OP0010 *MOVEL
+        JMP     OP0011 *MOVEW
+        JMP     OP0100 *MOVEM
+        JMP     OP0101
+        JMP     OP0110
+        JMP     OP0111
+        JMP     OP1000
+        JMP     OP1001 *SUB
          
 OP0000:
+*-> MOVE.B
 OP0001:
+        LEA     MOVEB, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JSR     EA * Find SRC EA
+        BRA     DESTEAFINDER * FIND DEST EA
 * -> MOVE.L
 * Printed using MOVEL String as a variable on the very bottom
 OP0010:
+        LEA     MOVE_PRINT, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JSR     CHECK_MOVEA
         LEA     MOVEL, A1
         MOVE.B  #14, D0
         TRAP    #15
-        BRA     EA
+        JSR     EA *Find SRC EA
+        BRA     DESTEAFINDER *FIND DEST EA
+* -> MOVE.W
+OP0011:
+        LEA     MOVE_PRINT, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JSR     CHECK_MOVEA
+        LEA     MOVEW, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JSR     EA * FIND SRC EA
+        BRA     DESTEAFINDER *FIND DEST EA
+OP0100:
+OP0101:
+OP0110:
+OP0111:
+        
+OP1000:
+* -> SUB
+* Splitting Sub into OPMODE and Register value
+
+
+
+OP1001:
+        LEA     SUBTRACT, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LSL.W   #4, D2
+        MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
+        LSR.W   #8, D3 * D3 = D register
+        LSR.W   #5, D3
+        MOVE.W  D2, D4 *D4 = SubOPMODE
+        LSL.W   #3, D4
+        LSR.W   #8, D4
+        LSR.W   #5, D4
+        MOVE.W  D2, D1 * D1 = EA Mode
+        LSL.W   #6, D1
+        LSR.W   #8, D1
+        LSR.W   #5, D1
+        MOVE.W  D2, D0 * D0 = EA register
+        LSL.W   #8, D0
+        LSL.W   #1, D0
+        LSR.W   #8, D0
+        LSR.W   #5, D0
+        LEA     SubTable, A2
+        MULU    #6, D4
+        JSR     (A2, D4)
+        
+* =============================================
+* JMP Table for SUB OPMODES
+SubTable:
+        JMP     OPMODE000 * BYTE  EA->DN
+        JMP     OPMODE001 * WORD  RA->DN  
+        JMP     OPMODE010 * LONG  EA->DN 
+        JMP     OPMODE011 * ERROR
+        JMP     OPMODE100 * BYTE  DN->EA
+        JMP     OPMODE101 * BYTE  DN->EA
+        JMP     OPMODE110 * BYTE  DN->EA
+        JMP     OPMODE111 * ERROR
+        
+OPMODE000:
+        MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+        LEA     SIZE_BYTE, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        BRA     Sub_OPMODE_FIRST
+OPMODE001
+        MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+        LEA     SIZE_Word, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        BRA     Sub_OPMODE_FIRST
+OPMODE010
+        MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+        LEA     SIZE_Long, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        BRA     Sub_OPMODE_FIRST
+OPMODE011
+        JMP     PRINTInvalidSUB
+OPMODE100
+        MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+        LEA     SIZE_BYTE, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        BRA     Sub_OPMODE_SECOND
+OPMODE101
+        MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+        LEA     SIZE_Word, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        BRA     Sub_OPMODE_SECOND
+OPMODE110
+        MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+        LEA     SIZE_LONG, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        BRA     Sub_OPMODE_SECOND
+OPMODE111
+        JMP     PRINTInvalidSUB
+
+*===============================================
+* Used for Dn->EA for SUB
+* Called by 001, 010, 100, 
+Sub_OPMODE_FIRST:
+        MOVE.B  D5, D0   * TEMP RETURN D0
+        JSR     EACHECKER 
+        CLR     D0
+        CLR     D1
+        JSR     PRINTCOMMA
+        MOVE.B  D3, D0
+        JSR     DestEAChecker 
+        BRA     addrloop *EA FINISHED---------------------------------------------------------------------------------------------------------------------------
+        
+Sub_OPMODE_SECOND:
+        MOVE.B  D1, D4   *TEMP STORE D1
+        CLR     D0  *Clean D0
+        MOVE.B  D3, D0
+        CLR     D1
+        JSR     EACHECKER 
+        CLR     D0
+        CLR     D1
+        JSR     PRINTCOMMA
+        MOVE.B  D5, D0   * TEMP RETURN D0
+        MOVE.B  D4, D1   * TEMP RETURN D1
+        JSR     DestEAChecker 
+        BRA     addrloop *EA FINISHED-----
+        
+* CHECK FOR MOVEA BC it has the same OPCODE as MOVE
+CHECK_MOVEA
+        MOVE.L  D2, D3  * HOlding D2 in D3 temp
+        LSL.L   #8, D2 // Remove first 20 bits to get opperand
+        LSL.L   #8, D2
+        LSL.L   #4, D2
+        LSR.L   #8, D2
+        LSR.L   #8, D2
+        LSR.L   #4, D2 // 12 bits of opperand found
+        LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
+        MOVE.B  D2, D1 * Prepare D1 for Mode
+        LSL.B   #5, D1  * Shift 5 bits to get rid of Register and size
+        LSR.B   #5, D1
+        CMP.B   #%001, D1
+        BEQ     PRINTA
+        MOVE.L  D3, D2 
+        RTS * Goes back to OP Value
+        
+PRINTA
+        LEA     MOVEA, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        MOVE.L  D3, D2
+        RTS * Goes back to CHECK_MOVEA
         
         
-        
-* EA STARTS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+* EA STARTS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 *=================================================================
 *-----------EA-- Calculate EA used for Data Registers
 *----------Pre: D2, D0, D1 must be clear
 *----------POST: prints out EA, D0 will store Data Register #, D1 will store EA MODE
 EA:
+        CLR     D0  * Clear D0 and D1 so they don't conflict
+        CLR     D1
+        CLR     D3
         LSL.L   #8, D2 // Remove first 20 bits to get opperand
         LSL.L   #8, D2
         LSL.L   #4, D2
@@ -154,6 +330,7 @@ EA:
         MOVE.B  D2, D1 *Source Data Mode
         LSL.B   #2, D1
         LSR.B   #5, D1
+        
 *=================================================
 *-----------EA CHECKER------Continues from EA
 *-----------Pre: D1 must contain the Mode of EA, D0 must store register# of EA        
@@ -171,15 +348,27 @@ EACHECKER:
         BEQ     JMPTO_SRC_INDR_ADDR_REG
         JMP     PRINTINVALIDEA
         
-        
+*=================================================
+*-----------DEST EA CHECKER------Continues from EA
+*-----------Pre: D1 must contain the Mode of EA, D0 must store register# of EA        
+* TODO: ERROR CHECKING, OTHER MODES other than D0, USE 4 HEX FOR COMPARISON        
 DESTEACHECKER:
         CMP.B   #%0000, D1
         BEQ     JMPTODestREG *JUMPS TO Source D registers
+        CMP.B   #%0001, D1
+        BEQ     JMPTO_DEST_ADDR_REG
         CMP.B   #%0010, D1
+        BEQ     JMPTO_DEST_INDR_ADDR_REG
+        CMP.B   #%0011, D1
+        BEQ     JMPTO_DEST_INDR_ADDR_REG
+        CMP.B   #%0100, D1
         BEQ     JMPTO_DEST_INDR_ADDR_REG
         JMP     PRINTINVALIDEA
         
-        
+*=================================================      
+* Dest EA Finder
+* PRE: ONLY USED FOR MOVE
+* POST: PRINTS DEST EA  
 DestEAFinder:
         JSR     PRINTCOMMA  * Prints comma between two operrands
         LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
@@ -202,12 +391,12 @@ JMPTOSRCREG:
         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
         JSR     (A1, D0) *JMP To index A1 + D0
         * EA CONTINUES HERE
-        BRA     DESTEAFinder
+        RTS * BRA DESTEAFINDER DELETED
 JMPToDestReg: *PRINT OUT DEST Registers
         LEA     DATAREGTABLE, A1
         MULU    #6, D0 * Multiply by 6 bc Each index between jmp table diff is 6
         JSR     (A1, D0) *JMP to A1 + D0
-        RTS
+        RTS    * Goes Back to DestEAFinder
         
 
 *===================================================
@@ -217,24 +406,27 @@ JMPTO_SRC_ADDR_REG:
         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
         JSR     (A1, D0) *JMP To index A1 + D0
         * EA CONTINUES HERE
-        BRA     DestEAFinder
+        RTS * BRA DESTEAFINDER DELETED
 JMPTo_Dest_ADDR_Reg: *PRINT OUT DEST Registers
         LEA     AddrREGTABLE, A1
         MULU    #6, D0 * Multiply by 6 bc Each index between jmp table diff is 6
         JSR     (A1, D0) *JMP to A1 + D0
-        RTS
+        RTS     * Goes Back to DESTEAFinder
         
 *===================================================
 *-------------Indirect Address Register checker------------------
 *Copied from Address Register checker, basically adding parenthesis () around Address register
+* Also Detects ()+ and -()
+* PRE: D1 stores mode, D0 stores register #
+* D1 to D5 are off limits
 JMPTO_SRC_INDR_ADDR_REG:
-       MOVE.B   D0, D3  *TEMP storage for D0 because it will be used by PRINT
+       MOVE.B   D0, D5  *TEMP storage for D0 because it will be used by PRINT
        CMP.B    #%100, D1       * IF IT IS -()
        BEQ      PRE_DECREMENT_SRC
        LEA      INDR_LEFT, A1
        MOVE.B   #14, D0
        TRAP     #15
-       MOVE.B   D3, D0   *TEMP storage for D0 because it will be used by PRINT
+       MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
        LEA     AddrREGTABLE, A1
        MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
        JSR     (A1, D0) *JMP To index A1 + D0
@@ -243,12 +435,12 @@ JMPTO_SRC_INDR_ADDR_REG:
        TRAP     #15
        CMP.B    #%0011, D1 * IF IT IS ()+
        BEQ      POST_INCREMENT_SRC
-       BRA      DESTEAFINDER
+       RTS * BRA DESTEAFINDER DELETED
        
 JMPTO_DEST_INDR_ADDR_REG:
        MOVE.B   D0, D3  *TEMP storage for D0 because it will be used by PRINT
        CMP.B    #%100, D1
-       BEQ      PRE_DECREMENT_SRC * IF IT IS -()
+       BEQ      PRE_DECREMENT_DEST * IF IT IS -()
        LEA      INDR_LEFT, A1
        MOVE.B   #14, D0
        TRAP     #15
@@ -260,15 +452,14 @@ JMPTO_DEST_INDR_ADDR_REG:
        MOVE.B   #14, D0
        TRAP     #15
        CMP.B    #%0011, D1  // IF IT IS ()+
-       BEQ      POST_INCREMENT_SRC
-       TRAP     #15
-       RTS
+       BEQ      POST_INCREMENT_DEST
+       RTS      * Goes Back to DestEAFinder
        
 POST_INCREMENT_SRC:
        LEA      POST_INCRE, A1
        MOVE.B   #14, D0
        TRAP     #15
-       BRA      DESTEAFINDER
+       RTS * BRA DESTEAFINDER DELETED
        
 PRE_DECREMENT_SRC:
        LEA      PRE_DECRE, A1
@@ -277,36 +468,36 @@ PRE_DECREMENT_SRC:
        LEA      INDR_LEFT, A1
        MOVE.B   #14, D0
        TRAP     #15
-       MOVE.B   D3, D0   *TEMP storage for D0 because it will be used by PRINT
+       MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
        LEA     AddrREGTABLE, A1
        MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
        JSR     (A1, D0) *JMP To index A1 + D0
        LEA      INDR_RIGHT, A1
        MOVE.B   #14, D0
        TRAP     #15
-       BRA      DESTEAFINDER
+       RTS * BRA DESTEAFINDER DELETED
 
-POST_INCERMENT_DEST
+POST_INCREMENT_DEST
        LEA      POST_INCRE, A1
        MOVE.B   #14, D0
        TRAP     #15
-       RTS
+       RTS      * Goes Back to DestEAFinder
        
-PRE_DECRECMENT_DEST:
+PRE_DECREMENT_DEST:
        LEA      PRE_DECRE, A1
        MOVE.B   #14, D0
        TRAP     #15
        LEA      INDR_LEFT, A1
        MOVE.B   #14, D0
        TRAP     #15
-       MOVE.B   D3, D0   *TEMP storage for D0 because it will be used by PRINT
+       MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
        LEA     AddrREGTABLE, A1
        MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
        JSR     (A1, D0) *JMP To index A1 + D0
        LEA      INDR_RIGHT, A1
        MOVE.B   #14, D0
        TRAP     #15
-       RTS
+       RTS      * Goes Back to DestEAFinder
        
 
 
@@ -422,7 +613,7 @@ REG_A7:
         TRAP    #15
         RTS
         
-        
+*====================================================PRinting/ ERROR method comes down here=========================================
 PRINTCOMMA: * Prints comma between two operrands
         LEA     COMMA, A1
         MOVE.B  #14, D0
@@ -433,10 +624,13 @@ PrintInvalidEA:
         LEA     Invalid_EA_Addr, A1
         MOVE.B  #14, D0
         TRAP    #15
-        JMP     LOOP
+        JMP     AddrLoop
         
-        
-
+PrintInvalidSUB:
+        LEA     Invalid_EA_SUB, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JMP     AddrLoop
         
         
         
@@ -463,11 +657,21 @@ LF  EQU $0A
 WELCOME     DC.B    'Please enter starting address',CR, LF, 0
 WELCOME2    DC.B    'Please enter ending address',CR, LF, 0
 Invalid_EA_ADDR DC.B   'Invalid EA detected', CR, LF, 0
+INVALID_EA_SUB  DC.B    'Invalid SUB OPMODE Detected', CR, LF, 0
 
 COMMA       DC.B    ', ', 0
 
+*DATASIZE
+SIZE_BYTE       DC.B    '.B ', 0
+SIZE_WORD       DC.B    '.W ', 0
+SIZE_LONG       DC.B    '.L ', 0
 
-MOVEL       DC.B    'MOVE.L ', 0
+*MOVE OPCODES
+MOVE_PRINT  DC.B    'MOVE', 0
+MOVEB       DC.B    'MOVE.B ', 0
+MOVEW       DC.B    '.W ', 0
+MOVEL       DC.B    '.L ', 0
+MOVEA       DC.B    'A', 0
 
 
 *DATA REGISTERS PRINTOUT
@@ -496,9 +700,14 @@ INDR_RIGHT  DC.B    ')', 0
 POST_INCRE   DC.B    '+', 0
 PRE_DECRE   DC.B    '-', 0
 
+*SUB
+SUBTRACT    DC.B    'SUB', 0
+
 addrStart   DC.L    1   // Starting address
 addrEnd     DC.L    1   // ending address
     END    START        ; last line of source
+
+
 
 
 
