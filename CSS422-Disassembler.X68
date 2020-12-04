@@ -38,7 +38,7 @@ GETINPUT:
         MOVE.B  #$0, d0  // intitiate counter
         JSR     LOOP    // Convert Ending address int Hex
        * MOVEA.L  D0, A0   // Testing
-        MOVE.W  #$9B91, $6000 // MOVE.L D0, D1, used for testing only
+        MOVE.W  #$D4E5, $6000 // MOVE.L D0, D1, used for testing only
         LEA     $6000, A2 //testing
         JSR     OPCODE
         JMP     END
@@ -135,6 +135,10 @@ JMPTABLE
         JMP     OP0111
         JMP     OP1000
         JMP     OP1001 *SUB
+        JMP     OP1010
+        JMP     OP1011
+        JMP     OP1100
+        JMP     OP1101 *ADD
          
 OP0000:
 *-> MOVE.B
@@ -169,17 +173,49 @@ OP0011:
         BRA     DESTEAFINDER *FIND DEST EA
 OP0100:
 OP0101:
+        
 OP0110:
 OP0111:
         
-OP1000:
+
+
+
 * -> SUB
 * Splitting Sub into OPMODE and Register value
-
-
-
 OP1001:
         LEA     SUBTRACT, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LSL.W   #4, D2
+        MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
+        LSR.W   #8, D3 * D3 = D register
+        LSR.W   #5, D3
+        MOVE.W  D2, D4 *D4 = SubOPMODE
+        LSL.W   #3, D4
+        LSR.W   #8, D4
+        LSR.W   #5, D4
+        MOVE.W  D2, D1 * D1 = EA Mode
+        LSL.W   #6, D1
+        LSR.W   #8, D1
+        LSR.W   #5, D1
+        MOVE.W  D2, D0 * D0 = EA register
+        LSL.W   #8, D0
+        LSL.W   #1, D0
+        LSR.W   #8, D0
+        LSR.W   #5, D0
+        LEA     SubTable, A2
+        MULU    #6, D4
+        JSR     (A2, D4)
+        
+OP1000:
+OP1010
+OP1011
+OP1100
+        
+* -> ADD
+* Spltting Add into OPMODE and Register Value
+OP1101:
+        LEA     ADDITION, A1
         MOVE.B  #14, D0
         TRAP    #15
         LSL.W   #4, D2
@@ -209,11 +245,11 @@ SubTable:
         JMP     OPMODE000 * BYTE  EA->DN
         JMP     OPMODE001 * WORD  RA->DN  
         JMP     OPMODE010 * LONG  EA->DN 
-        JMP     OPMODE011 * ERROR
+        JMP     OPMODE011 * ADDA  WORD
         JMP     OPMODE100 * BYTE  DN->EA
         JMP     OPMODE101 * BYTE  DN->EA
         JMP     OPMODE110 * BYTE  DN->EA
-        JMP     OPMODE111 * ERROR
+        JMP     OPMODE111 * ADDA  LONG
         
 OPMODE000:
         MOVE.B  D0, D5   * TEMP STORAGE for DATA register
@@ -234,7 +270,14 @@ OPMODE010
         TRAP    #15
         BRA     Sub_OPMODE_FIRST
 OPMODE011
-        JMP     PRINTInvalidSUB
+        MOVE.B  D0, D5
+        LEA     MOVEA, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LEA     SIZE_WORD, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        BRA     Sub_OPMODE_ADDA
 OPMODE100
         MOVE.B  D0, D5   * TEMP STORAGE for DATA register
         LEA     SIZE_BYTE, A1
@@ -268,7 +311,9 @@ Sub_OPMODE_FIRST:
         MOVE.B  D3, D0
         JSR     DestEAChecker 
         BRA     addrloop *EA FINISHED---------------------------------------------------------------------------------------------------------------------------
-        
+*===============================================
+* Used for Dn->EA for SUB
+* Called by 100, 101, 110 
 Sub_OPMODE_SECOND:
         MOVE.B  D1, D4   *TEMP STORE D1
         CLR     D0  *Clean D0
@@ -282,6 +327,19 @@ Sub_OPMODE_SECOND:
         MOVE.B  D4, D1   * TEMP RETURN D1
         JSR     DestEAChecker 
         BRA     addrloop *EA FINISHED-----
+*===============================================
+* Used for Dn->EA for SUB
+* Called by 011, 111
+Sub_OPMODE_ADDA:
+        MOVE.B  D5, D0   * TEMP RETURN D0
+        JSR     EACHECKER 
+        CLR     D0
+        CLR     D1
+        JSR     PRINTCOMMA
+        MOVE.B  D3, D0
+        MOVE.B  #%001, D1
+        JSR     DestEAChecker 
+        BRA     addrloop *EA FINISHED---------------------------------------------------------------------------------------------------------------------------
         
 * CHECK FOR MOVEA BC it has the same OPCODE as MOVE
 CHECK_MOVEA
@@ -702,6 +760,7 @@ PRE_DECRE   DC.B    '-', 0
 
 *SUB
 SUBTRACT    DC.B    'SUB', 0
+ADDITION    DC.B    'ADD', 0
 
 addrStart   DC.L    1   // Starting address
 addrEnd     DC.L    1   // ending address
