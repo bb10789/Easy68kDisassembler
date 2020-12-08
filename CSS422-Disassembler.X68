@@ -38,7 +38,7 @@ GETINPUT:
         MOVE.B  #$0, d0  // intitiate counter
         JSR     LOOP    // Convert Ending address int Hex
        * MOVEA.L  D0, A0   // Testing
-        MOVE.W  #$D4E5, $6000 // MOVE.L D0, D1, used for testing only
+        MOVE.W  #$4655, $6000 // MOVE.L D0, D1, used for testing only
         LEA     $6000, A2 //testing
         JSR     OPCODE
         JMP     END
@@ -111,13 +111,14 @@ F:
 *---------Find the first 4 of instruction and determines the instruction
 OPCODE:
         JSR     CLRREG
-        MOVE.W  (A2), D1
+        MOVE.W  (A2),D1
         MOVE.L  D1, D2  //D2 now containse the opperand EA!!!
         LSR.W   #4, D1
         LSR.W   #4, D1
         LSR.W   #4, D1  //Right Shift 3 times
         MOVE.B  D1, D0  // OPCODE FOUND
         MULU    #6, D0
+        MOVE.B  D0, OpCode
         LEA     JMPTABLE, A2
         JMP     (A2, D0)
         
@@ -139,7 +140,9 @@ JMPTABLE
         JMP     OP1011
         JMP     OP1100
         JMP     OP1101 *ADD
-         
+
+*=====================================================================    
+*--------------D2 must contain Entire opcode for everything below
 OP0000:
 *-> MOVE.B
 OP0001:
@@ -171,7 +174,62 @@ OP0011:
         TRAP    #15
         JSR     EA * FIND SRC EA
         BRA     DESTEAFINDER *FIND DEST EA
+        
+*-> NOT
 OP0100:
+        LEA     NOT_OP, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LSL.W   #8, D2
+        MOVE.B  D2, D3 * D3 = SIZE OF INSTRUCTION
+        LSR.W   #8, D3
+        LSR.W   #6, D3
+        MOVE.W  D2, D1 * D1 = EA OPMODE
+        LSL.W   #2, D1
+        LSR.W   #8, D1
+        LSR.W   #5, D1
+        MOVE.W  D2, D0 * D0 = EA REGISTER
+        LSL.W   #5, D0
+        LSR.W   #8, D0
+        LSR.W   #5, D0
+        MULU    #6, D3 * Multiply for JMPTABLE
+        LEA     NOT_JMPTable, A2
+        JSR     (A2, D3)
+        
+NOT_JMPTable
+        JMP     NOT_SIZE00
+        JMP     NOT_SIZE01
+        JMP     NOT_SIZE10
+        JMP     NOT_SIZE11
+
+NOT_SIZE00:
+        MOVE.B  D0, D5  *TEMP STORAGE FOR D0
+        LEA     SIZE_B, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        MOVE.B  D5, D0 * RETURN TEMP STORAGE
+        JSR     EACHECKER
+        BRA     AddrLoop
+NOT_SIZE01:
+        MOVE.B  D0, D5 *TEMP STORAGE FOR D0
+        LEA     SIZE_B, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        MOVE.B  D5, D0 * RETURN TEMP STORAGE
+        JSR     EACHECKER
+        BRA     AddrLoop
+NOT_SIZE10:
+        MOVE.B  D0, D5 *TEMP STORAGE FOR D0
+        LEA     SIZE_B, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        MOVE.B  D5, D0 * RETURN TEMP STORAGE
+        JSR     EACHECKER
+        BRA     AddrLoop
+NOT_SIZE11:
+        BRA     PRINTINVALIDEA
+
+            
 OP0101:
         
 OP0110:
@@ -206,11 +264,62 @@ OP1001:
         LEA     SubTable, A2
         MULU    #6, D4
         JSR     (A2, D4)
-        
+* -> OR
+* Splitting AND into OPMODE and Register value       
 OP1000:
+        LEA     OR, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LSL.W   #4, D2
+        MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
+        LSR.W   #8, D3 * D3 = D register
+        LSR.W   #5, D3
+        MOVE.W  D2, D4 *D4 = SubOPMODE
+        LSL.W   #3, D4
+        LSR.W   #8, D4
+        LSR.W   #5, D4
+        MOVE.W  D2, D1 * D1 = EA Mode
+        LSL.W   #6, D1
+        LSR.W   #8, D1
+        LSR.W   #5, D1
+        CMP.B   #%0001, D1
+        BEQ     PRINTINVALIDEA
+        MOVE.W  D2, D0 * D0 = EA register
+        LSL.W   #8, D0
+        LSL.W   #1, D0
+        LSR.W   #8, D0
+        LSR.W   #5, D0
+        LEA     SubTable, A2
+        MULU    #6, D4
+        JSR     (A2, D4)
 OP1010
 OP1011
+* -> AND
+* Splitting AND into OPMODE and Register value
 OP1100
+        LEA     AND, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LSL.W   #4, D2
+        MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
+        LSR.W   #8, D3 * D3 = D register
+        LSR.W   #5, D3
+        MOVE.W  D2, D4 *D4 = SubOPMODE
+        LSL.W   #3, D4
+        LSR.W   #8, D4
+        LSR.W   #5, D4
+        MOVE.W  D2, D1 * D1 = EA Mode
+        LSL.W   #6, D1
+        LSR.W   #8, D1
+        LSR.W   #5, D1
+        MOVE.W  D2, D0 * D0 = EA register
+        LSL.W   #8, D0
+        LSL.W   #1, D0
+        LSR.W   #8, D0
+        LSR.W   #5, D0
+        LEA     SubTable, A2
+        MULU    #6, D4
+        JSR     (A2, D4)
         
 * -> ADD
 * Spltting Add into OPMODE and Register Value
@@ -269,7 +378,13 @@ OPMODE010
         MOVE.B  #14, D0
         TRAP    #15
         BRA     Sub_OPMODE_FIRST
+*===============================================
+*Special OPMODE can only be used by ADD
 OPMODE011
+        CMP.B   #%1101, OpCode
+        BEQ     Special_OPMODE_USED
+        JMP     PRINTINVALIDEA
+Special_OPMODE_USED:
         MOVE.B  D0, D5
         LEA     MOVEA, A1
         MOVE.B  #14, D0
@@ -283,22 +398,45 @@ OPMODE100
         LEA     SIZE_BYTE, A1
         MOVE.B  #14, D0
         TRAP    #15
+        JSR     Memory_Alterable_Check
         BRA     Sub_OPMODE_SECOND
 OPMODE101
         MOVE.B  D0, D5   * TEMP STORAGE for DATA register
         LEA     SIZE_Word, A1
         MOVE.B  #14, D0
         TRAP    #15
+        JSR     Memory_Alterable_Check
         BRA     Sub_OPMODE_SECOND
 OPMODE110
         MOVE.B  D0, D5   * TEMP STORAGE for DATA register
         LEA     SIZE_LONG, A1
         MOVE.B  #14, D0
         TRAP    #15
+        JSR     Memory_Alterable_Check
         BRA     Sub_OPMODE_SECOND
-OPMODE111
-        JMP     PRINTInvalidSUB
+OPMODE111:
+        CMP.B   #%1101, OpCode
+        BEQ     Special_OPMODE_USED2
+        JMP     PRINTINVALIDEA
+Special_OPMODE_USED2:
+        MOVE.B  D0, D5
+        LEA     MOVEA, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LEA     SIZE_LONG, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        BRA     Sub_OPMODE_ADDA
+*===================================================
+* USED FOR SUB AND OR, check if dest EA is memory Alterable
 
+Memory_Alterable_Check:
+        CMP.B   #%000, D1
+        BEQ     PRINTINVALIDEA
+        CMP.B   #%001, D1
+        BEQ     PRINTINVALIDEA
+        RTS
+        
 *===============================================
 * Used for Dn->EA for SUB
 * Called by 001, 010, 100, 
@@ -727,6 +865,7 @@ SIZE_LONG       DC.B    '.L ', 0
 *MOVE OPCODES
 MOVE_PRINT  DC.B    'MOVE', 0
 MOVEB       DC.B    'MOVE.B ', 0
+SIZE_B       DC.B    '.B ', 0
 MOVEW       DC.B    '.W ', 0
 MOVEL       DC.B    '.L ', 0
 MOVEA       DC.B    'A', 0
@@ -761,10 +900,16 @@ PRE_DECRE   DC.B    '-', 0
 *SUB
 SUBTRACT    DC.B    'SUB', 0
 ADDITION    DC.B    'ADD', 0
+AND         DC.B    'AND', 0
+OR          DC.B    'OR', 0
+NOT_OP      DC.B    'NOT', 0
 
 addrStart   DC.L    1   // Starting address
 addrEnd     DC.L    1   // ending address
+OpCodeStorage DC.L    1
     END    START        ; last line of source
+
+
 
 
 
