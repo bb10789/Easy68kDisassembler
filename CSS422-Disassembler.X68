@@ -9,9 +9,11 @@ LowerLimit      EQU     $00003000
 UpperLimit      EQU     $00FFFFFE
 YesNoStorage    EQU     $00000050
 
-    ORG    $6000
+    ORG    $9000
 TESTER:
-        MOVE.L      #$1234, D1
+        NOT.B       (A1)
+        NOT.W       (A1)+
+        NOT.L       (A3)
         MOVE.B      D0, D1
 
     ORG    $1000
@@ -89,8 +91,8 @@ AddrLoop:
         LEA     PRINT_NEXTLINE, A1
         MOVE.B  #14, D0
         TRAP    #15
-        MOVE.L  addrEnd, A7
-        CMP.W   A6, A7
+        MOVE.L  addrEnd, A4
+        CMP.L   A6, A4
         BLE     END
         BRA     OPCODE
         
@@ -166,9 +168,9 @@ F:
 *=======================================================================
 *---------Find the first 4 of instruction and determines the instruction
 OPCODE:
-        CLR     D0
-        CLR     D1
-        CLR     D2
+        CLR.L     D0
+        CLR.L     D1
+        CLR.L     D2
         MOVE.W  A6, D1  * PRINT ADDRESS PER LINE
         MOVE.B  #16, D2
         MOVE.B  #15, D0
@@ -177,9 +179,9 @@ OPCODE:
         LEA     SPACER, A1
         MOVE.B  #14, D0
         TRAP    #15
-        CLR     D0
-        CLR     D1
-        CLR     D2
+        CLR.L     D0
+        CLR.L     D1
+        CLR.L     D2
         MOVE.W  (A6)+,D1
         MOVE.L  D1, D2  //D2 now containse the opperand EA!!!
         LSR.W   #4, D1
@@ -224,6 +226,7 @@ OP0001:
 * -> MOVE.L
 * Printed using MOVEL String as a variable on the very bottom
 OP0010:
+        MOVE.B  #%10, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
         LEA     MOVE_PRINT, A1
         MOVE.B  #14, D0
         TRAP    #15
@@ -271,7 +274,7 @@ NOT_JMPTable
         JMP     NOT_SIZE01
         JMP     NOT_SIZE10
         JMP     NOT_SIZE11
-
+*NOT.B
 NOT_SIZE00:
         MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
         MOVE.B  D0, D5  *TEMP STORAGE FOR D0
@@ -281,17 +284,19 @@ NOT_SIZE00:
         MOVE.B  D5, D0 * RETURN TEMP STORAGE
         JSR     EACHECKER
         BRA     AddrLoop
-NOT_SIZE01:
+* NOT.W
+NOT_SIZE01: 
         MOVE.B  D0, D5 *TEMP STORAGE FOR D0
-        LEA     SIZE_B, A1
+        LEA     SIZE_WORD, A1
         MOVE.B  #14, D0
         TRAP    #15
         MOVE.B  D5, D0 * RETURN TEMP STORAGE
         JSR     EACHECKER
         BRA     AddrLoop
+* NOT.L
 NOT_SIZE10:
         MOVE.B  D0, D5 *TEMP STORAGE FOR D0
-        LEA     SIZE_B, A1
+        LEA     SIZE_LONG, A1
         MOVE.B  #14, D0
         TRAP    #15
         MOVE.B  D5, D0 * RETURN TEMP STORAGE
@@ -515,8 +520,8 @@ Memory_Alterable_Check:
 Sub_OPMODE_FIRST:
         MOVE.B  D5, D0   * TEMP RETURN D0
         JSR     EACHECKER 
-        CLR     D0
-        CLR     D1
+        CLR.L     D0
+        CLR.L     D1
         JSR     PRINTCOMMA
         MOVE.B  D3, D0
         JSR     DestEAChecker 
@@ -526,12 +531,12 @@ Sub_OPMODE_FIRST:
 * Called by 100, 101, 110 
 Sub_OPMODE_SECOND:
         MOVE.B  D1, D4   *TEMP STORE D1
-        CLR     D0  *Clean D0
+        CLR.L     D0  *Clean D0
         MOVE.B  D3, D0
-        CLR     D1
+        CLR.L     D1
         JSR     EACHECKER 
-        CLR     D0
-        CLR     D1
+        CLR.L     D0
+        CLR.L     D1
         JSR     PRINTCOMMA
         MOVE.B  D5, D0   * TEMP RETURN D0
         MOVE.B  D4, D1   * TEMP RETURN D1
@@ -583,9 +588,9 @@ PRINTA
 *----------Pre: D2, D0, D1 must be clear
 *----------POST: prints out EA, D0 will store Data Register #, D1 will store EA MODE
 EA:
-        CLR     D0  * Clear D0 and D1 so they don't conflict
-        CLR     D1
-        CLR     D3
+        CLR.L     D0  * Clear D0 and D1 so they don't conflict
+        CLR.L     D1
+        CLR.L     D3
         LSL.L   #8, D2 // Remove first 20 bits to get opperand
         LSL.L   #8, D2
         LSL.L   #4, D2
@@ -775,6 +780,15 @@ JMPTO_SRC_IMMEDIATE:
        CMP.B    #%001, D0
        BEQ      Address_L
        CMP.B    #%100, D0
+       BEQ      Address_Immediate
+       JMP      PRINTINVALIDEA
+*===================================  
+* Same as SRC but without Immediate address     
+JMPTO_DEST_IMMEDIATE:
+       CMP.B    #%000, D0
+       BEQ      Address_W
+       CMP.B    #%001, D0
+       BEQ      Address_L
        JMP      PRINTINVALIDEA
        
 Address_W:
@@ -978,13 +992,13 @@ PrintInvalidAddress:
          
 * Clear all registers    
 CLRREG:
-    CLR D0
-    CLR D1
-    CLR D2
-    CLR D3
-    CLR D4
-    CLR D5
-    CLR D6
+    CLR.L D0
+    CLR.L D1
+    CLR.L D2
+    CLR.L D3
+    CLR.L D4
+    CLR.L D5
+    CLR.L D6
     RTS
     
     
