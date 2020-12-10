@@ -4,6 +4,16 @@
 * Date       :
 * Description:
 *-----------------------------------------------------------
+
+LowerLimit      EQU     $00003000
+UpperLimit      EQU     $00FFFFFE
+YesNoStorage    EQU     $00000050
+
+    ORG    $6000
+TESTER:
+        MOVE.L      #$1234, D1
+        MOVE.B      D0, D1
+
     ORG    $1000
 *=================================================================
 *                     THIS IS OUR MAIN METHOD
@@ -16,6 +26,7 @@ START:                  ; first instruction of program
 *--------------- PRE: will be using D0, D5, A1
 *----------------Post: Address will be stored in addrStart and addrEnd
 GETINPUT:
+        JSR     CLRREG    *clean registers to restart program
         LEA     WELCOME, A1
         MOVE.B  #14,    D0
         TRAP    #15
@@ -32,23 +43,68 @@ GETINPUT:
         MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
         MOVE.B  #2,D0
         TRAP    #15
-        MOVE.L  D5, addrEnd
         CLR     D5       // Clear D5 for exit address
         MOVE.B  D1, D4   // Move input length into D4, See Convert Pre conditon
         MOVE.B  #$0, d0  // intitiate counter
         JSR     LOOP    // Convert Ending address int Hex
-       * MOVEA.L  D0, A0   // Testing
-        MOVE.W  #$4655, $6000 // MOVE.L D0, D1, used for testing only
-        LEA     $6000, A2 //testing
+        MOVE.L  D5, addrEnd
+        JSR     CheckRange
+        *MOVE.W  #$4655, $6000 // MOVE.L D0, D1, used for testing only
+        *LEA     $6000, A6 //testing
+        MOVE.L  addrStart, D0
+        MOVEA.L D0, A6
         JSR     OPCODE
         JMP     END
+
+*==================================================================
+*-----------------Check if the range is above or under the limit
+*------------------Pre: addrStart and addrEnd has begin and end values
+        
+CheckRange:
+        MOVE.L  AddrStart, A6
+        MOVE.L  #LowerLimit, D0
+        CMP.L   A6, D0
+        BGT     PRINTINVALIDADDRESS
+        MOVE.L  #UpperLimit, D0
+        CMP.L   A6, D0
+        BLT     PRINTINVALIDADDRESS
+        MOVE.L  AddrEnd, A6
+        MOVE.L  #LowerLimit, D0
+        CMP.L   A6, D0
+        BGT     PRINTINVALIDADDRESS
+        MOVE.L  #UpperLimit, D0
+        CMP.L   A6, D0
+        BLT     PRINTINVALIDADDRESS
+        RTS
+
 END:
+        LEA     TY_Message, A1
+        MOVE.B  #14, D0
+        TRAP    #15
         MOVE.B  #9, D0
         TRAP    #15
         
 *Please start from here Annabelle
 AddrLoop:
-        BRA     END     // DELETE THIS WHEN UR WORKING ON IT ANNABELLE!!!!!!!
+        LEA     PRINT_NEXTLINE, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        MOVE.L  addrEnd, A7
+        CMP.W   A6, A7
+        BLE     END
+        BRA     OPCODE
+        
+*===========Check if user wants to continue
+CHECK_CONT:
+        LEA     Continue_Program, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LEA     YesNoStorage, A1
+        MOVE.B  #2, D0
+        TRAP    #15
+        CMP.B   #$59, (A1) * Yes
+        BEQ     GETINPUT
+        JMP     END
 LOOP
 
         CMP.L   D0, D4  // Loop until length of word reached
@@ -110,8 +166,21 @@ F:
 *=======================================================================
 *---------Find the first 4 of instruction and determines the instruction
 OPCODE:
-        JSR     CLRREG
-        MOVE.W  (A2),D1
+        CLR     D0
+        CLR     D1
+        CLR     D2
+        MOVE.W  A6, D1  * PRINT ADDRESS PER LINE
+        MOVE.B  #16, D2
+        MOVE.B  #15, D0
+        TRAP    #15
+        MOVE.L  #$00000000, A1
+        LEA     SPACER, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CLR     D0
+        CLR     D1
+        CLR     D2
+        MOVE.W  (A6)+,D1
         MOVE.L  D1, D2  //D2 now containse the opperand EA!!!
         LSR.W   #4, D1
         LSR.W   #4, D1
@@ -130,15 +199,15 @@ JMPTABLE
         JMP     OP0001 *MOVEB
         JMP     OP0010 *MOVEL
         JMP     OP0011 *MOVEW
-        JMP     OP0100 *MOVEM
+        JMP     OP0100 *NOT
         JMP     OP0101
         JMP     OP0110
         JMP     OP0111
-        JMP     OP1000
+        JMP     OP1000 *OR
         JMP     OP1001 *SUB
         JMP     OP1010
         JMP     OP1011
-        JMP     OP1100
+        JMP     OP1100 *AND
         JMP     OP1101 *ADD
 
 *=====================================================================    
@@ -146,6 +215,7 @@ JMPTABLE
 OP0000:
 *-> MOVE.B
 OP0001:
+        MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
         LEA     MOVEB, A1
         MOVE.B  #14, D0
         TRAP    #15
@@ -203,6 +273,7 @@ NOT_JMPTable
         JMP     NOT_SIZE11
 
 NOT_SIZE00:
+        MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
         MOVE.B  D0, D5  *TEMP STORAGE FOR D0
         LEA     SIZE_B, A1
         MOVE.B  #14, D0
@@ -361,6 +432,7 @@ SubTable:
         JMP     OPMODE111 * ADDA  LONG
         
 OPMODE000:
+        MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
         MOVE.B  D0, D5   * TEMP STORAGE for DATA register
         LEA     SIZE_BYTE, A1
         MOVE.B  #14, D0
@@ -542,6 +614,8 @@ EACHECKER:
         BEQ     JMPTO_SRC_INDR_ADDR_REG
         CMP.B   #%0100, D1
         BEQ     JMPTO_SRC_INDR_ADDR_REG
+        CMP.B   #%0111, D1
+        BEQ     JMPTO_SRC_IMMEDIATE
         JMP     PRINTINVALIDEA
         
 *=================================================
@@ -577,7 +651,7 @@ DestEAFinder:
         LSL.B   #2, D0
         LSR.B   #5, D0
         JSR     DESTEACHECKER
-        JMP     END     ****Remember to send this back to next step loop&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+        JMP     AddrLoop     ****Remember to send this back to next step loop&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
         
 *===================================================
@@ -695,7 +769,74 @@ PRE_DECREMENT_DEST:
        TRAP     #15
        RTS      * Goes Back to DestEAFinder
        
+JMPTO_SRC_IMMEDIATE:
+       CMP.B    #%000, D0
+       BEQ      Address_W
+       CMP.B    #%001, D0
+       BEQ      Address_L
+       CMP.B    #%100, D0
+       JMP      PRINTINVALIDEA
+       
+Address_W:
+        LEA     DOLLAR_SIGN, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CLR     D1
+        CLR     D0
+        MOVE.W  (A6)+, D1
+        MOVE.B  #16, D2
+        MOVE.B  #15, D0
+        TRAP    #15 
+        RTS 
 
+Address_L
+        LEA     DOLLAR_SIGN, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CLR     D1
+        CLR     D0
+        MOVE.L  (A6)+, D1
+        MOVE.B  #16, D2
+        MOVE.B  #15, D0
+        TRAP    #15
+        RTS  
+        
+Address_Immediate:
+        LEA     POUND_SIGN, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LEA     DOLLAR_SIGN, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CMP.B   #%00, OpCodeSize
+        BEQ     Immediate_B
+        CMP.B   #%11, OpCodeSize
+        BEQ     Immediate_W
+        CMP.B   #%10, OpCOdeSize
+        BEQ     Immediate_L
+        
+Immediate_B:
+        MOVE.B  (A6)+, D1
+        MOVE.B  #16, D2
+        MOVE.B  #15, D0
+        TRAP    #15
+        RTS
+        
+Immediate_W:
+        MOVE.W  (A6)+, D1
+        MOVE.B  #16, D2
+        MOVE.B  #15, D0
+        TRAP    #15
+        RTS
+        
+Immediate_L:
+        MOVE.L  (A6)+, D1
+        MOVE.B  #16, D2
+        MOVE.B  #15, D0
+        TRAP    #15
+        RTS
+
+        
 
 *=================================================================
 *---------Data Register Table used for printing out Registers----
@@ -828,11 +969,16 @@ PrintInvalidSUB:
         TRAP    #15
         JMP     AddrLoop
         
-        
+PrintInvalidAddress:
+        LEA     Invalid_Address, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JMP     AddrLoop
         
          
 * Clear all registers    
 CLRREG:
+    CLR D0
     CLR D1
     CLR D2
     CLR D3
@@ -854,9 +1000,13 @@ WELCOME     DC.B    'Please enter starting address',CR, LF, 0
 WELCOME2    DC.B    'Please enter ending address',CR, LF, 0
 Invalid_EA_ADDR DC.B   'Invalid EA detected', CR, LF, 0
 INVALID_EA_SUB  DC.B    'Invalid SUB OPMODE Detected', CR, LF, 0
+Invalid_Address DC.B    'Given address is Invalid', CR, LF, 0
+Continue_Program    DC.B    'Continue Program? Y/N', CR, LF, 0
+Print_NextLine  DC.B    '', CR, LF, 0
+TY_Message  DC.B    'Thank you for using our program', CR, LF, 0
 
 COMMA       DC.B    ', ', 0
-
+SPACER      DC.B    '   ', 0
 *DATASIZE
 SIZE_BYTE       DC.B    '.B ', 0
 SIZE_WORD       DC.B    '.W ', 0
@@ -896,6 +1046,8 @@ INDR_LEFT   DC.B    '(', 0
 INDR_RIGHT  DC.B    ')', 0
 POST_INCRE   DC.B    '+', 0
 PRE_DECRE   DC.B    '-', 0
+DOLLAR_SIGN DC.B    '$', 0
+POUND_SIGN  DC.B    '#', 0
 
 *SUB
 SUBTRACT    DC.B    'SUB', 0
@@ -907,7 +1059,10 @@ NOT_OP      DC.B    'NOT', 0
 addrStart   DC.L    1   // Starting address
 addrEnd     DC.L    1   // ending address
 OpCodeStorage DC.L    1
+OpCodeSize  DC.L    1
     END    START        ; last line of source
+
+
 
 
 
