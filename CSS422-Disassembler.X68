@@ -9,13 +9,54 @@ LowerLimit      EQU     $00003000
 UpperLimit      EQU     $00FFFFFE
 YesNoStorage    EQU     $00000050
 
+    ORG     $5000
+SPECIALTEST:
+    MOVE.B    D0,-(A0)
+
+    ORG    $6000
+ROLTEST:
+     ADD.B     D1,D2
+    ADD.B     D1,(A1)
+    ADD.B     D1,(A1)+
+    ADD.B     D1,-(A1)
+    ADD.B     (A1),D1
+    ADD.B     (A1)+,D1
+    ADD.B     -(A1),D1
+    ADD.W     D1,D2
+    ADD.W     D1,(A1)
+    ADD.W     D1,(A1)+
+    ADD.W     D1,-(A1)
+    ADD.W     (A1),D1
+    ADD.W     (A1)+,D1
+    ADD.W     -(A1),D1
+    ADD.L     D1,D2
+    ADD.L     D1,(A1)
+    ADD.L     D1,(A1)+
+    ADD.L     D1,-(A1)
+    ADD.L     (A1),D1
+    ADD.L     (A1)+,D1
+    ADD.L     -(A1),D1
+    ADDA.W        D1,A2
+    ADDA.W        (A1),A2
+    ADDA.W        (A1)+,A2
+    ADDA.W        -(A1),A2
+    ADDA.L        D1,A2
+    ADDA.L        (A1),A2
+    ADDA.L        (A1)+,A2
+    ADDA.L        -(A1),A2
+
+
+
+
     ORG    $9000
 TESTER:
         NOT.B       (A1)
         NOT.W       (A1)+
         NOT.L       (A3)
-        MOVE.B      D0, D1
-        ROR         (A1)
+        MOVE.B    D0,D1
+        MOVE.B    D0,D1
+
+  
 
     ORG    $1000
 *=================================================================
@@ -30,6 +71,7 @@ START:                  ; first instruction of program
 *----------------Post: Address will be stored in addrStart and addrEnd
 GETINPUT:
         JSR     CLRREG    *clean registers to restart program
+        JSR     CLRAREG
         LEA     WELCOME, A1
         MOVE.B  #14,    D0
         TRAP    #15
@@ -169,10 +211,10 @@ F:
 *=======================================================================
 *---------Find the first 4 of instruction and determines the instruction
 OPCODE:
-        CLR.L     D0
-        CLR.L     D1
-        CLR.L     D2
-        MOVE.W  A6, D1  * PRINT ADDRESS PER LINE
+        MOVE.L  #0, D0
+        MOVE.L  #0, D1
+        MOVE.L  #0, D2
+        MOVE.L  A6, D1  * PRINT ADDRESS PER LINE
         MOVE.B  #16, D2
         MOVE.B  #15, D0
         TRAP    #15
@@ -429,14 +471,14 @@ OP1101:
 *-> ROL, ROR        
 OP1110:
         LSL.W   #4, D2
-        MOVE.W  D2, D0* Shift size
-        LSR.W   #8, D0
-        LSR.W   #5, D0
+        MOVE.W  D2, D6 * Shift size
+        LSR.W   #8, D6
+        LSR.W   #5, D6
         MOVE.W  D2, D3 * L/R
         LSL.W   #3, D3
         LSR.W   #8, D3
         LSR.W   #7, D3
-        MOVE.W  D2, D4 * Shift Size
+        MOVE.W  D2, D4 * Size field
         LSL.W   #4, D4
         LSR.W   #8, D4
         LSR.W   #6, D4
@@ -446,7 +488,7 @@ OP1110:
         LSR.W   #7, D1
         MOVE.W  D2, D5 * Shift Register
         LSL.W   #8, D5
-        LSL.W   #5, D5
+        LSL.W   #1, D5
         LSR.W   #8, D5
         LSR.W   #5, D5
         MULU    #6, D3
@@ -461,29 +503,75 @@ Rotate_Right
         LEA     ROR, A1
         MOVE.B  #14, D0
         TRAP    #15
+        JMP     Rotate_Size_Table
+        
 Rotate_Left
         LEA     ROL, A1
         MOVE.B  #14, D0
         TRAP    #15
+        JMP     Rotate_Size_Table
         
 Rotate_Size_TABLE:
-        CMP.B   #%000
+        CMP.B   #%000, D4
         BEQ     Rotate_B
-        CMP.B   #%001
+        CMP.B   #%001, D4
         BEQ     Rotate_W
-        CMP.B   #%010
+        CMP.B   #%010, D4
         BEQ     Rotate_L
+        CMP.B   #%11, D4
+        BEQ     Rotate_EA
         
 Rotate_B
         LEA     SIZE_BYTE,A1
         MOVE.B  #14, D0
         TRAP    #15
-        CMP.B   #%1, D1
-        BEQ     Rotate_Print_immediate
         CMP.B   #%0, D1
+        BEQ     Rotate_Print_immediate
+        CMP.B   #%1, D1
         BEQ     Rotate_Print_Register
-Rotate_Print_REG
-        MOVE.B  D4, D0
+        
+Rotate_W
+        LEA     SIZE_WORD,A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CMP.B   #%0, D1
+        BEQ     Rotate_Print_immediate
+        CMP.B   #%1, D1
+        BEQ     Rotate_Print_Register
+
+Rotate_L
+        LEA     SIZE_LONG,A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CMP.B   #%0, D1
+        BEQ     Rotate_Print_immediate
+        CMP.B   #%1, D1
+        BEQ     Rotate_Print_Register
+        
+Rotate_EA
+        MOVE.B  #%01, OpCodeSize
+        LEA     SPACER, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        MOVE.B  D5, D0
+        MOVE.B  D2, D1
+        LSL.W   #6, D1
+        LSR.W   #8, D1
+        LSR.W   #5, D1
+        
+ROTATE_EACHECKER:
+        CMP.B   #%0010, D1
+        BEQ     JMPTO_DEST_INDR_ADDR_REG
+        CMP.B   #%0011, D1
+        BEQ     JMPTO_DEST_INDR_ADDR_REG
+        CMP.B   #%0100, D1
+        BEQ     JMPTO_DEST_INDR_ADDR_REG
+        JMP     PRINTINVALIDEA
+        CMP.B   #%0111, D1
+        BEQ     JMPTO_SRC_IMMEDIATE
+        
+Rotate_Print_REGISTER
+        MOVE.B  D6, D0
         MOVE.B  #%000, D1
         JSR     EACHECKER
         MOVE.B  D5, D0
@@ -495,14 +583,15 @@ Rotate_Print_immediate
         LEA     POUND_SIGN, A1
         MOVE.B  #14, D0
         TRAP    #15
-        CMP.B   #%0000, D4
+        CMP.B   #%0000, D6
         BEQ     PRINT8
-        MOVE.B  D4, D1
+        MOVE.B  D6, D1
         MOVE.B  #10, D2
         MOVE.B  #15, D0
         TRAP    #15
+        
 Rotate_Print_ImmediateCONT:
-        JSR     PRINTCOMMMA
+        JSR     PRINTCOMMA
         MOVE.B  D5, D0
         MOVE.B  #%000, D1
         JSR     DESTEACHECKER
@@ -806,7 +895,7 @@ JMPTO_SRC_INDR_ADDR_REG:
        RTS * BRA DESTEAFINDER DELETED
        
 JMPTO_DEST_INDR_ADDR_REG:
-       MOVE.B   D0, D3  *TEMP storage for D0 because it will be used by PRINT
+       MOVE.B   D0, D5  *TEMP storage for D0 because it will be used by PRINT
        CMP.B    #%100, D1
        BEQ      PRE_DECREMENT_DEST * IF IT IS -()
        LEA      INDR_LEFT, A1
@@ -1087,14 +1176,25 @@ PrintInvalidAddress:
          
 * Clear all registers    
 CLRREG:
-    CLR.L D0
-    CLR.L D1
-    CLR.L D2
-    CLR.L D3
-    CLR.L D4
-    CLR.L D5
-    CLR.L D6
+    MOVE.L  #0, D0
+    MOVE.L  #0, D1
+    MOVE.L  #0, D2
+    MOVE.L  #0, D3
+    MOVE.L  #0, D4
+    MOVE.L  #0, D5
+    MOVE.L  #0, D6
+    MOVE.L  #0, D7
     RTS
+    
+CLRAREG:
+    MOVE.L  #0, A0
+    MOVE.L  #0, A1
+    MOVE.L  #0, A2
+    MOVE.L  #0, A3
+    MOVE.L  #0, A4
+    MOVE.L  #0, A5
+    RTS
+
     
     
         
@@ -1105,8 +1205,8 @@ CLRREG:
 * Put variables and constants here
 CR  EQU $0D
 LF  EQU $0A
-WELCOME     DC.B    'Please enter starting address',CR, LF, 0
-WELCOME2    DC.B    'Please enter ending address',CR, LF, 0
+WELCOME     DC.B    'Please enter starting address', CR, LF, 0
+WELCOME2    DC.B    'Please enter ending address', CR, LF, 0
 Invalid_EA_ADDR DC.B   'Invalid EA detected', CR, LF, 0
 INVALID_EA_SUB  DC.B    'Invalid SUB OPMODE Detected', CR, LF, 0
 Invalid_Address DC.B    'Given address is Invalid', CR, LF, 0
