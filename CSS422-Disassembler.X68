@@ -21,11 +21,6 @@ ROLTEST:
 
 
 
-
-
-
-
-
     ORG    $9000
 TESTER:
         NOT.B       (A1)
@@ -50,6 +45,7 @@ START:                  ; first instruction of program
 GETINPUT:
         JSR     CLRREG    *clean registers to restart program
         JSR     CLRAREG
+        MOVE.L  #0, ScreenCounter * initalize screenCounter
         LEA     WELCOME, A1
         MOVE.B  #14,    D0
         TRAP    #15
@@ -72,8 +68,6 @@ GETINPUT:
         JSR     LOOP    // Convert Ending address int Hex
         MOVE.L  D5, addrEnd
         JSR     CheckRange
-        *MOVE.W  #$4655, $6000 // MOVE.L D0, D1, used for testing only
-        *LEA     $6000, A6 //testing
         MOVE.L  addrStart, D0
         MOVEA.L D0, A6
         JSR     OPCODE
@@ -117,6 +111,9 @@ AddrLoop:
         MOVE.L  addrEnd, A4
         CMP.L   A6, A4
         BLE     CHECK_CONT
+        ADD.B   #1, ScreenCounter
+        CMP.B   #30, ScreenCounter
+        BEQ     Next_Screen
         BRA     OPCODE
         
 *===========Check if user wants to continue
@@ -132,6 +129,21 @@ CHECK_CONT:
         CMP.B   #$79, (A1)
         BEQ     GETINPUT
         JMP     END
+        
+NEXT_SCREEN:
+        MOVE.B  #0, ScreenCounter
+        LEA     Continue_Screen, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LEA     YesNoStorage, A1
+        MOVE.B  #2, D0
+        TRAP    #15
+        CMP.B   #$59, (A1) * Yes
+        BEQ     AddrLoop
+        CMP.B   #$79, (A1)
+        BEQ     AddrLoop
+        JMP     END
+        
 LOOP
 
         CMP.L   D0, D4  // Loop until length of word reached
@@ -213,6 +225,8 @@ OPCODE:
         LSR.W   #4, D1
         LSR.W   #4, D1  //Right Shift 3 times
         MOVE.B  D1, D0  // OPCODE FOUND
+        CMP.B   #%1110, D0
+        BGT     PRINTDATA
         MULU    #6, D0
         *MOVE.B  D0, OpCodeSize
         LEA     JMPTABLE, A2
@@ -586,7 +600,7 @@ PRINT8:
         TRAP    #15
         JMP     Rotate_Print_ImmediateCONT
         
-                
+* End of ROR, ROL, (Kelvin)                
         
 * =============================================
 * JMP Table for SUB OPMODES
@@ -1156,7 +1170,14 @@ PrintInvalidAddress:
         JMP     AddrLoop
         
 PrintDATA:
-        
+        LEA     DATA, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        MOVE.W  D2, D1
+        MOVE.B  #16, D2
+        MOVE.B  #15, D0
+        TRAP    #15
+        BRA     AddrLoop
          
 * Clear all registers    
 CLRREG:
@@ -1195,6 +1216,7 @@ Invalid_EA_ADDR DC.B   'Invalid EA detected', CR, LF, 0
 INVALID_EA_SUB  DC.B    'Invalid SUB OPMODE Detected', CR, LF, 0
 Invalid_Address DC.B    'Given address is Invalid', CR, LF, 0
 Continue_Program    DC.B    'Continue Program? Y/N', CR, LF, 0
+Continue_Screen DC.B    'Continue Screen? Y/N', CR, LF, 0
 Print_NextLine  DC.B    '', CR, LF, 0
 TY_Message  DC.B    'Thank you for using our program', CR, LF, 0
 
@@ -1212,6 +1234,7 @@ SIZE_B       DC.B    '.B ', 0
 MOVEW       DC.B    '.W ', 0
 MOVEL       DC.B    '.L ', 0
 MOVEA       DC.B    'A', 0
+DATA        DC.B    'DATA: ', 0
 
 
 *DATA REGISTERS PRINTOUT
@@ -1254,6 +1277,7 @@ ROR         DC.B    'ROR', 0
 addrStart   DC.L    1   // Starting address
 addrEnd     DC.L    1   // ending address
 OpCodeStorage DC.L    1
+ScreenCounter   DC.L    1
 OpCodeSize  DC.L    1
     END    START        ; last line of source
 
