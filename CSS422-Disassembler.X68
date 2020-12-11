@@ -15,6 +15,7 @@ TESTER:
         NOT.W       (A1)+
         NOT.L       (A3)
         MOVE.B      D0, D1
+        ROR         (A1)
 
     ORG    $1000
 *=================================================================
@@ -211,6 +212,7 @@ JMPTABLE
         JMP     OP1011
         JMP     OP1100 *AND
         JMP     OP1101 *ADD
+        JMP     OP1110 *ROR ROL
 
 *=====================================================================    
 *--------------D2 must contain Entire opcode for everything below
@@ -254,7 +256,7 @@ OP0100:
         MOVE.B  #14, D0
         TRAP    #15
         LSL.W   #8, D2
-        MOVE.B  D2, D3 * D3 = SIZE OF INSTRUCTION
+        MOVE.W  D2, D3 * D3 = SIZE OF INSTRUCTION
         LSR.W   #8, D3
         LSR.W   #6, D3
         MOVE.W  D2, D1 * D1 = EA OPMODE
@@ -423,6 +425,97 @@ OP1101:
         LEA     SubTable, A2
         MULU    #6, D4
         JSR     (A2, D4)
+
+*-> ROL, ROR        
+OP1110:
+        LSL.W   #4, D2
+        MOVE.W  D2, D0* Shift size
+        LSR.W   #8, D0
+        LSR.W   #5, D0
+        MOVE.W  D2, D3 * L/R
+        LSL.W   #3, D3
+        LSR.W   #8, D3
+        LSR.W   #7, D3
+        MOVE.W  D2, D4 * Shift Size
+        LSL.W   #4, D4
+        LSR.W   #8, D4
+        LSR.W   #6, D4
+        MOVE.W  D2, D1 *immediate/register
+        LSL.W   #6, D1
+        LSR.W   #8, D1
+        LSR.W   #7, D1
+        MOVE.W  D2, D5 * Shift Register
+        LSL.W   #8, D5
+        LSL.W   #5, D5
+        LSR.W   #8, D5
+        LSR.W   #5, D5
+        MULU    #6, D3
+        LEA     RotateTable, A1
+        JSR     (A1, D3)
+        
+RotateTable:
+        JMP     Rotate_RIGHT
+        JMP     Rotate_LEFT
+        
+Rotate_Right
+        LEA     ROR, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+Rotate_Left
+        LEA     ROL, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        
+Rotate_Size_TABLE:
+        CMP.B   #%000
+        BEQ     Rotate_B
+        CMP.B   #%001
+        BEQ     Rotate_W
+        CMP.B   #%010
+        BEQ     Rotate_L
+        
+Rotate_B
+        LEA     SIZE_BYTE,A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CMP.B   #%1, D1
+        BEQ     Rotate_Print_immediate
+        CMP.B   #%0, D1
+        BEQ     Rotate_Print_Register
+Rotate_Print_REG
+        MOVE.B  D4, D0
+        MOVE.B  #%000, D1
+        JSR     EACHECKER
+        MOVE.B  D5, D0
+        CLR     D1
+        JSR     DESTEACHECKER
+        JMP     AddrLoop
+        
+Rotate_Print_immediate
+        LEA     POUND_SIGN, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CMP.B   #%0000, D4
+        BEQ     PRINT8
+        MOVE.B  D4, D1
+        MOVE.B  #10, D2
+        MOVE.B  #15, D0
+        TRAP    #15
+Rotate_Print_ImmediateCONT:
+        JSR     PRINTCOMMMA
+        MOVE.B  D5, D0
+        MOVE.B  #%000, D1
+        JSR     DESTEACHECKER
+        JMP     AddrLoop
+
+PRINT8:
+        MOVE.B  D4, D1
+        MOVE.B  #10, D2
+        MOVE.B  #15, D0
+        TRAP    #15
+        JMP     Rotate_Print_ImmediateCONT
+        
+                
         
 * =============================================
 * JMP Table for SUB OPMODES
@@ -822,6 +915,8 @@ Address_Immediate:
         LEA     DOLLAR_SIGN, A1
         MOVE.B  #14, D0
         TRAP    #15
+        CMP.B   #%01, OpCodeSize *01 is used to mark invalid immediate for example ROR, ROL
+        BEQ     PRINTINVALIDEA
         CMP.B   #%00, OpCodeSize
         BEQ     Immediate_B
         CMP.B   #%11, OpCodeSize
@@ -1069,12 +1164,15 @@ ADDITION    DC.B    'ADD', 0
 AND         DC.B    'AND', 0
 OR          DC.B    'OR', 0
 NOT_OP      DC.B    'NOT', 0
+ROL         DC.B    'ROL', 0
+ROR         DC.B    'ROR', 0
 
 addrStart   DC.L    1   // Starting address
 addrEnd     DC.L    1   // ending address
 OpCodeStorage DC.L    1
 OpCodeSize  DC.L    1
     END    START        ; last line of source
+
 
 
 
