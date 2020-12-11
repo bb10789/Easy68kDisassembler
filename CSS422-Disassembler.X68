@@ -85,6 +85,9 @@ CheckRange:
         MOVE.L  #UpperLimit, D0
         CMP.L   A6, D0
         BLT     PRINTINVALIDADDRESS
+        MOVE.L  AddrStart, D0
+        BTST    #0, D0
+        BNE     PRINTInvalidAddress
         MOVE.L  AddrEnd, A6
         MOVE.L  #LowerLimit, D0
         CMP.L   A6, D0
@@ -92,6 +95,9 @@ CheckRange:
         MOVE.L  #UpperLimit, D0
         CMP.L   A6, D0
         BLT     PRINTINVALIDADDRESS
+        MOVE.L  AddrEnd, D0
+        BTST    #0, D0
+        BNE     PrintInvalidAddress
         RTS
 
 END:
@@ -1167,7 +1173,7 @@ PrintInvalidAddress:
         LEA     Invalid_Address, A1
         MOVE.B  #14, D0
         TRAP    #15
-        JMP     AddrLoop
+        JMP     GETINPUT
         
 PrintDATA:
         LEA     DATA, A1
