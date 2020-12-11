@@ -11,39 +11,17 @@ YesNoStorage    EQU     $00000050
 
     ORG     $5000
 SPECIALTEST:
-    MOVE.B    D0,-(A0)
+        ADD.B     D1,D2
+    ADD.B     D1,(A1)
 
     ORG    $6000
 ROLTEST:
-     ADD.B     D1,D2
-    ADD.B     D1,(A1)
-    ADD.B     D1,(A1)+
-    ADD.B     D1,-(A1)
-    ADD.B     (A1),D1
-    ADD.B     (A1)+,D1
-    ADD.B     -(A1),D1
-    ADD.W     D1,D2
-    ADD.W     D1,(A1)
-    ADD.W     D1,(A1)+
-    ADD.W     D1,-(A1)
-    ADD.W     (A1),D1
-    ADD.W     (A1)+,D1
-    ADD.W     -(A1),D1
-    ADD.L     D1,D2
-    ADD.L     D1,(A1)
-    ADD.L     D1,(A1)+
-    ADD.L     D1,-(A1)
-    ADD.L     (A1),D1
-    ADD.L     (A1)+,D1
-    ADD.L     -(A1),D1
-    ADDA.W        D1,A2
-    ADDA.W        (A1),A2
-    ADDA.W        (A1)+,A2
-    ADDA.W        -(A1),A2
-    ADDA.L        D1,A2
-    ADDA.L        (A1),A2
-    ADDA.L        (A1)+,A2
-    ADDA.L        -(A1),A2
+
+
+
+
+
+
 
 
 
@@ -131,12 +109,14 @@ END:
         
 *Please start from here Annabelle
 AddrLoop:
+        JSR     CLRREG    *clean registers to restart program
+        JSR     CLRAREG
         LEA     PRINT_NEXTLINE, A1
         MOVE.B  #14, D0
         TRAP    #15
         MOVE.L  addrEnd, A4
         CMP.L   A6, A4
-        BLE     END
+        BLE     CHECK_CONT
         BRA     OPCODE
         
 *===========Check if user wants to continue
@@ -148,6 +128,8 @@ CHECK_CONT:
         MOVE.B  #2, D0
         TRAP    #15
         CMP.B   #$59, (A1) * Yes
+        BEQ     GETINPUT
+        CMP.B   #$79, (A1)
         BEQ     GETINPUT
         JMP     END
 LOOP
@@ -211,9 +193,9 @@ F:
 *=======================================================================
 *---------Find the first 4 of instruction and determines the instruction
 OPCODE:
-        MOVE.L  #0, D0
-        MOVE.L  #0, D1
-        MOVE.L  #0, D2
+        CLR.L   D0
+        CLR.L   D1
+        CLR.L   D2
         MOVE.L  A6, D1  * PRINT ADDRESS PER LINE
         MOVE.B  #16, D2
         MOVE.B  #15, D0
@@ -232,7 +214,7 @@ OPCODE:
         LSR.W   #4, D1  //Right Shift 3 times
         MOVE.B  D1, D0  // OPCODE FOUND
         MULU    #6, D0
-        MOVE.B  D0, OpCode
+        *MOVE.B  D0, OpCodeSize
         LEA     JMPTABLE, A2
         JMP     (A2, D0)
         
@@ -716,7 +698,7 @@ Sub_OPMODE_SECOND:
         CLR.L     D0  *Clean D0
         MOVE.B  D3, D0
         CLR.L     D1
-        JSR     EACHECKER 
+        JSR     EACHECKER yeah
         CLR.L     D0
         CLR.L     D1
         JSR     PRINTCOMMA
@@ -1173,6 +1155,8 @@ PrintInvalidAddress:
         TRAP    #15
         JMP     AddrLoop
         
+PrintDATA:
+        
          
 * Clear all registers    
 CLRREG:
@@ -1272,6 +1256,7 @@ addrEnd     DC.L    1   // ending address
 OpCodeStorage DC.L    1
 OpCodeSize  DC.L    1
     END    START        ; last line of source
+
 
 
 
