@@ -11,8 +11,7 @@ YesNoStorage    EQU     $00000050
 
     ORG     $5000
 SPECIALTEST:
-        ADD.B     D1,D2
-    ADD.B     D1,(A1)
+        ADDQ    #5, D1
 
     ORG    $6000
 ROLTEST:
@@ -351,8 +350,78 @@ NOT_SIZE10:
 NOT_SIZE11:
         BRA     PRINTINVALIDEA
 
-            
+
+*-> ADDQ            
 OP0101:
+        LEA     ADDQ, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LSL.W   #4, D2
+        MOVE.W  D2, D6 *D1 Immediate DATA
+        LSR.W   #8, D6
+        LSR.W   #5, D6
+        MOVE.W  D2, D4 * D4 OPCode Size
+        LSL.W   #4, D4
+        LSR.W   #8, D4
+        LSR.W   #6, D4
+        MOVE.W  D2, D1 * D1 EA Mode
+        LSL.W   #6, D1
+        LSR.W   #8, D1
+        LSR.W   #5, D1
+        MOVE.W  D2, D5 * D5 EA REgister
+        LSL.W   #8, D5
+        LSL.W   #1, D5
+        LSR.W   #8, D5
+        LSR.W   #5, D5
+        
+        
+ADDQ_Size_TABLE:
+        CMP.B   #%000, D4
+        BEQ     ADDQ_B
+        CMP.B   #%001, D4
+        BEQ     ADDQ_W
+        CMP.B   #%010, D4
+        BEQ     ADDQ_L
+        
+ADDQ_B
+        LEA     SIZE_BYTE,A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JMP     ADDQ_Print_immediate
+        
+ADDQ_W
+        LEA     SIZE_WORD,A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CMP.B   #%0, D1
+        JMP     ADDQ_Print_immediate
+
+ADDQ_L
+        LEA     SIZE_LONG,A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JMP     ADDQ_Print_immediate
+        
+        
+ADDQ_Print_immediate
+        LEA     POUND_SIGN, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        CMP.B   #%0000, D6
+        BEQ     PRINT8
+        
+        MOVE.B  #15, D0
+        TRAP    #15
+        
+ADDQ_Print_ImmediateCONT:
+        JSR     PRINTCOMMA
+        MOVE.B  D5, D0
+        MOVE.B  #%000, D1
+        JSR     DESTEACHECKER
+        JMP     AddrLoop
+
+
+       
         
 OP0110:
 OP0111:
@@ -570,7 +639,7 @@ ROTATE_EACHECKER:
         BEQ     JMPTO_DEST_INDR_ADDR_REG
         JMP     PRINTINVALIDEA
         CMP.B   #%0111, D1
-        BEQ     JMPTO_SRC_IMMEDIATE
+        BEQ     JMPTO_DEST_IMMEDIATE
         
 Rotate_Print_REGISTER
         MOVE.B  D6, D0
@@ -596,7 +665,7 @@ Rotate_Print_ImmediateCONT:
         JSR     PRINTCOMMA
         MOVE.B  D5, D0
         MOVE.B  #%000, D1
-        JSR     DESTEACHECKER
+        JSR     ROTATE_EACHECKER
         JMP     AddrLoop
 
 PRINT8:
@@ -822,6 +891,8 @@ DESTEACHECKER:
         BEQ     JMPTO_DEST_INDR_ADDR_REG
         CMP.B   #%0100, D1
         BEQ     JMPTO_DEST_INDR_ADDR_REG
+        CMP.B   #%0111, D1
+        BEQ     JMPTO_DEST_IMMEDIATE
         JMP     PRINTINVALIDEA
         
 *=================================================      
@@ -1241,6 +1312,7 @@ MOVEW       DC.B    '.W ', 0
 MOVEL       DC.B    '.L ', 0
 MOVEA       DC.B    'A', 0
 DATA        DC.B    'DATA: ', 0
+ADDQ        DC.B    'ADDQ', 0
 
 
 *DATA REGISTERS PRINTOUT

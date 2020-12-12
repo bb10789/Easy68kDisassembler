@@ -1,6 +1,6 @@
 00001000 Starting Address
 Assembler used: EASy68K Editor/Assembler v5.16.01
-Created On: 12/11/2020 2:58:41 PM
+Created On: 12/11/2020 8:25:27 PM
 
 00000000                             1  *-----------------------------------------------------------
 00000000                             2  * Title      :
@@ -15,1281 +15,1353 @@ Created On: 12/11/2020 2:58:41 PM
 00000000                            11  
 00005000                            12      ORG     $5000
 00005000                            13  SPECIALTEST:
-00005000  D401                      14          ADD.B     D1,D2
-00005002  D311                      15      ADD.B     D1,(A1)
-00005004                            16  
-00006000                            17      ORG    $6000
-00006000                            18  ROLTEST:
+00005000  5A41                      14          ADDQ    #5, D1
+00005002                            15  
+00006000                            16      ORG    $6000
+00006000                            17  ROLTEST:
+00006000                            18  
 00006000                            19  
 00006000                            20  
 00006000                            21  
 00006000                            22  
-00006000                            23  
-00009000                            24      ORG    $9000
-00009000                            25  TESTER:
-00009000  4611                      26          NOT.B       (A1)
-00009002  4659                      27          NOT.W       (A1)+
-00009004  4693                      28          NOT.L       (A3)
-00009006  1200                      29          MOVE.B    D0,D1
-00009008  1200                      30          MOVE.B    D0,D1
-0000900A                            31  
-0000900A                            32    
-0000900A                            33  
-00001000                            34      ORG    $1000
-00001000                            35  *=================================================================
-00001000                            36  *                     THIS IS OUR MAIN METHOD
-00001000                            37  *               Don't throw random stuff in it, keep it to a minimum
-00001000                            38  
-00001000                            39  START:                  ; first instruction of program
-00001000  4EB9 00001006             40          JSR     GETINPUT
-00001006                            41  *=================================================================
-00001006                            42  *---------------Get starting and ending addresss------- Kelvin
-00001006                            43  *--------------- PRE: will be using D0, D5, A1
-00001006                            44  *----------------Post: Address will be stored in addrStart and addrEnd
-00001006                            45  GETINPUT:
-00001006  4EB9 00001C64             46          JSR     CLRREG    *clean registers to restart program
-0000100C  4EB9 00001C76             47          JSR     CLRAREG
-00001012  23FC 00000000 00001E1A    48          MOVE.L  #0, ScreenCounter * initalize screenCounter
-0000101C  43F9 00001CA0             49          LEA     WELCOME, A1
-00001022  103C 000E                 50          MOVE.B  #14,    D0
-00001026  4E4F                      51          TRAP    #15
-00001028  327C 0000                 52          MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
-0000102C  103C 0002                 53          MOVE.B  #2,D0
-00001030  4E4F                      54          TRAP    #15
-00001032  2801                      55          MOVE.L  D1, D4   // Move input length into D4, See Convert Pre conditon
-00001034  7000                      56          MOVE.L  #$0, d0  // intitiate counter
-00001036  4EB9 00001188             57          JSR     LOOP    // Convert starting address into hex
-0000103C  23C5 00001E0E             58          MOVE.L  D5, addrStart
-00001042  43F9 00001CC0             59          LEA     WELCOME2, A1
-00001048  103C 000E                 60          MOVE.B  #14,    D0
-0000104C  4E4F                      61          TRAP    #15
-0000104E  327C 0000                 62          MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
-00001052  103C 0002                 63          MOVE.B  #2,D0
-00001056  4E4F                      64          TRAP    #15
-00001058  4245                      65          CLR     D5       // Clear D5 for exit address
-0000105A  1801                      66          MOVE.B  D1, D4   // Move input length into D4, See Convert Pre conditon
-0000105C  103C 0000                 67          MOVE.B  #$0, d0  // intitiate counter
-00001060  4EB9 00001188             68          JSR     LOOP    // Convert Ending address int Hex
-00001066  23C5 00001E12             69          MOVE.L  D5, addrEnd
-0000106C  4EB9 00001086             70          JSR     CheckRange
-00001072  2039 00001E0E             71          MOVE.L  addrStart, D0
-00001078  2C40                      72          MOVEA.L D0, A6
-0000107A  4EB9 00001206             73          JSR     OPCODE
-00001080  4EF9 000010E0             74          JMP     END
-00001086                            75  
-00001086                            76  *==================================================================
-00001086                            77  *-----------------Check if the range is above or under the limit
-00001086                            78  *------------------Pre: addrStart and addrEnd has begin and end values
-00001086                            79          
-00001086                            80  CheckRange:
-00001086  2C79 00001E0E             81          MOVE.L  AddrStart, A6
-0000108C  203C 00003000             82          MOVE.L  #LowerLimit, D0
-00001092  B08E                      83          CMP.L   A6, D0
-00001094  6E00 0BA2                 84          BGT     PRINTINVALIDADDRESS
-00001098  203C 00FFFFFE             85          MOVE.L  #UpperLimit, D0
-0000109E  B08E                      86          CMP.L   A6, D0
-000010A0  6D00 0B96                 87          BLT     PRINTINVALIDADDRESS
-000010A4  2039 00001E0E             88          MOVE.L  AddrStart, D0
-000010AA  0800 0000                 89          BTST    #0, D0
-000010AE  6600 0B88                 90          BNE     PRINTInvalidAddress
-000010B2  2C79 00001E12             91          MOVE.L  AddrEnd, A6
-000010B8  203C 00003000             92          MOVE.L  #LowerLimit, D0
-000010BE  B08E                      93          CMP.L   A6, D0
-000010C0  6E00 0B76                 94          BGT     PRINTINVALIDADDRESS
-000010C4  203C 00FFFFFE             95          MOVE.L  #UpperLimit, D0
-000010CA  B08E                      96          CMP.L   A6, D0
-000010CC  6D00 0B6A                 97          BLT     PRINTINVALIDADDRESS
-000010D0  2039 00001E12             98          MOVE.L  AddrEnd, D0
-000010D6  0800 0000                 99          BTST    #0, D0
-000010DA  6600 0B5C                100          BNE     PrintInvalidAddress
-000010DE  4E75                     101          RTS
-000010E0                           102  
-000010E0                           103  END:
-000010E0  43F9 00001D5F            104          LEA     TY_Message, A1
-000010E6  103C 000E                105          MOVE.B  #14, D0
-000010EA  4E4F                     106          TRAP    #15
-000010EC  103C 0009                107          MOVE.B  #9, D0
-000010F0  4E4F                     108          TRAP    #15
-000010F2                           109          
-000010F2                           110  *Please start from here Annabelle
-000010F2                           111  AddrLoop:
-000010F2  4EB9 00001C64            112          JSR     CLRREG    *clean registers to restart program
-000010F8  4EB9 00001C76            113          JSR     CLRAREG
-000010FE  43F9 00001D5C            114          LEA     PRINT_NEXTLINE, A1
-00001104  103C 000E                115          MOVE.B  #14, D0
-00001108  4E4F                     116          TRAP    #15
-0000110A  2879 00001E12            117          MOVE.L  addrEnd, A4
-00001110  B9CE                     118          CMP.L   A6, A4
-00001112  6F00 0018                119          BLE     CHECK_CONT
-00001116  5239 00001E1A            120          ADD.B   #1, ScreenCounter
-0000111C  0C39 001E 00001E1A       121          CMP.B   #30, ScreenCounter
-00001124  6700 0030                122          BEQ     Next_Screen
-00001128  6000 00DC                123          BRA     OPCODE
-0000112C                           124          
-0000112C                           125  *===========Check if user wants to continue
-0000112C                           126  CHECK_CONT:
-0000112C  43F9 00001D2D            127          LEA     Continue_Program, A1
-00001132  103C 000E                128          MOVE.B  #14, D0
-00001136  4E4F                     129          TRAP    #15
-00001138  43F8 0050                130          LEA     YesNoStorage, A1
-0000113C  103C 0002                131          MOVE.B  #2, D0
-00001140  4E4F                     132          TRAP    #15
-00001142  0C11 0059                133          CMP.B   #$59, (A1) * Yes
-00001146  6700 FEBE                134          BEQ     GETINPUT
-0000114A  0C11 0079                135          CMP.B   #$79, (A1)
-0000114E  6700 FEB6                136          BEQ     GETINPUT
-00001152  4EF8 10E0                137          JMP     END
-00001156                           138          
-00001156                           139  NEXT_SCREEN:
-00001156  13FC 0000 00001E1A       140          MOVE.B  #0, ScreenCounter
-0000115E  43F9 00001D45            141          LEA     Continue_Screen, A1
-00001164  103C 000E                142          MOVE.B  #14, D0
-00001168  4E4F                     143          TRAP    #15
-0000116A  43F8 0050                144          LEA     YesNoStorage, A1
-0000116E  103C 0002                145          MOVE.B  #2, D0
-00001172  4E4F                     146          TRAP    #15
-00001174  0C11 0059                147          CMP.B   #$59, (A1) * Yes
-00001178  6700 FF78                148          BEQ     AddrLoop
-0000117C  0C11 0079                149          CMP.B   #$79, (A1)
-00001180  6700 FF70                150          BEQ     AddrLoop
-00001184  4EF8 10E0                151          JMP     END
-00001188                           152          
-00001188                           153  LOOP
-00001188                           154  
-00001188  B880                     155          CMP.L   D0, D4  // Loop until length of word reached
-0000118A  6E00 0006                156          BGT     CONVERT
-0000118E  5480                     157          ADD.L   #$2, D0 
-00001190  4E75                     158          RTS 
-00001192                           159  
-00001192                           160  *=================================================================
-00001192                           161  *---------------NUMBER CONVERSION FROM INPUT TO HEX------- Kelvin
-00001192                           162  *PRE      D4 must contain input length, d0 must be 0
-00001192                           163  *POST     D5 WILL CONTAIN ADDRESS VALUE IN HEX        
-00001192                           164  CONVERT:
-00001192  5280                     165          ADDQ.L  #$1, D0 // increment counter
-00001194  1211                     166          move.b  (A1),D1    // Get next bit from Input
-00001196  5289                     167          adda.L  #1, A1      // Increment Input
-00001198  0401 0030                168          sub.b   #$30,D1     //
-0000119C  B23C 0010                169          cmp.b   #$10,D1   // Check if value is larger than 10
-000011A0  6E00 000A                170          bgt     CHAR      // Find Hex
-000011A4  1401                     171          move.b  D1, D2    // IF it is less than 10
-000011A6  4EF9 000011DC            172          JMP     ADDVAL        
-000011AC                           173  CHAR:
-000011AC  B23C 0011                174          CMP.B   #$11, D1 // Convert each hex into an appropriate hex
-000011B0  6700 0030                175          BEQ     A
-000011B4  B23C 0012                176          CMP.B   #$12, D1
-000011B8  6700 002E                177          BEQ     B
-000011BC  B23C 0013                178          CMP.B   #$13, D1
-000011C0  6700 002C                179          BEQ     C
-000011C4  B23C 0014                180          CMP.B   #$14, D1
-000011C8  6700 002A                181          BEQ     D
-000011CC  B23C 0015                182          CMP.B   #$15, D1
-000011D0  6700 0028                183          BEQ     E
-000011D4  B23C 0016                184          CMP.B   #$16, D1
-000011D8  6700 0026                185          BEQ     F
-000011DC                           186  
-000011DC                           187  ADDVAL:
-000011DC  E98D                     188          lsl.l    #$4, D5 // Shift based on position
-000011DE  DA82                     189          add.l    D2, D5 //Add value into Input
-000011E0  60A6                     190          BRA      LOOP
-000011E2                           191      
-000011E2                           192  A:
-000011E2  740A                     193          MOVE.L  #$A, D2 
-000011E4  4EF8 11DC                194          jmp ADDVAL
-000011E8                           195  B:
-000011E8  740B                     196          MOVE.L  #$B, D2
-000011EA  4EF8 11DC                197          jmp ADDVAL
-000011EE                           198  C:
-000011EE  740C                     199          MOVE.L  #$C, D2
-000011F0  4EF8 11DC                200          jmp ADDVAL
-000011F4                           201  D:
-000011F4  740D                     202          MOVE.L  #$D, D2
-000011F6  4EF8 11DC                203          jmp ADDVAL
-000011FA                           204  E:
-000011FA  740E                     205          MOVE.L  #$E, D2
-000011FC  4EF8 11DC                206          jmp ADDVAL
-00001200                           207  F:
-00001200  740F                     208          MOVE.L  #$F, D2
-00001202  4EF8 11DC                209          jmp ADDVAL
-00001206                           210          
-00001206                           211  *=======================================================================
-00001206                           212  *---------Find the first 4 of instruction and determines the instruction
-00001206                           213  OPCODE:
-00001206  4280                     214          CLR.L   D0
-00001208  4281                     215          CLR.L   D1
-0000120A  4282                     216          CLR.L   D2
-0000120C  220E                     217          MOVE.L  A6, D1  * PRINT ADDRESS PER LINE
-0000120E  143C 0010                218          MOVE.B  #16, D2
-00001212  103C 000F                219          MOVE.B  #15, D0
-00001216  4E4F                     220          TRAP    #15
-00001218  227C 00000000            221          MOVE.L  #$00000000, A1
-0000121E  43F9 00001D84            222          LEA     SPACER, A1
-00001224  103C 000E                223          MOVE.B  #14, D0
-00001228  4E4F                     224          TRAP    #15
-0000122A  4280                     225          CLR.L     D0
-0000122C  4281                     226          CLR.L     D1
-0000122E  4282                     227          CLR.L     D2
-00001230  321E                     228          MOVE.W  (A6)+,D1
-00001232  2401                     229          MOVE.L  D1, D2  //D2 now containse the opperand EA!!!
-00001234  E849                     230          LSR.W   #4, D1
-00001236  E849                     231          LSR.W   #4, D1
-00001238  E849                     232          LSR.W   #4, D1  //Right Shift 3 times
-0000123A  1001                     233          MOVE.B  D1, D0  // OPCODE FOUND
-0000123C  B03C 000E                234          CMP.B   #%1110, D0
-00001240  6E00 0A06                235          BGT     PRINTDATA
-00001244  C0FC 0006                236          MULU    #6, D0
-00001248                           237          *MOVE.B  D0, OpCodeSize
-00001248  45F9 00001252            238          LEA     JMPTABLE, A2
-0000124E  4EF2 0000                239          JMP     (A2, D0)
-00001252                           240          
-00001252                           241  *========================================================================
-00001252                           242  *--------Jump table used for different opcode!!! Please orgainze well using decimal
-00001252                           243  *------- Add your instructions here
-00001252                           244  JMPTABLE
-00001252  4EF9 000012AC            245          JMP     OP0000
-00001258  4EF9 000012AC            246          JMP     OP0001 *MOVEB
-0000125E  4EF9 000012CA            247          JMP     OP0010 *MOVEL
-00001264  4EF9 000012FA            248          JMP     OP0011 *MOVEW
-0000126A  4EF9 00001322            249          JMP     OP0100 *NOT
-00001270  4EF9 000013C6            250          JMP     OP0101
-00001276  4EF9 000013C6            251          JMP     OP0110
-0000127C  4EF9 000013C6            252          JMP     OP0111
-00001282  4EF9 00001402            253          JMP     OP1000 *OR
-00001288  4EF9 000013C6            254          JMP     OP1001 *SUB
-0000128E  4EF9 00001446            255          JMP     OP1010
-00001294  4EF9 00001446            256          JMP     OP1011
-0000129A  4EF9 00001446            257          JMP     OP1100 *AND
-000012A0  4EF9 00001482            258          JMP     OP1101 *ADD
-000012A6  4EF9 000014BE            259          JMP     OP1110 *ROR ROL
-000012AC                           260  
-000012AC                           261  *=====================================================================    
-000012AC                           262  *--------------D2 must contain Entire opcode for everything below
-000012AC                           263  OP0000:
-000012AC                           264  *-> MOVE.B
-000012AC                           265  OP0001:
-000012AC  13FC 0000 00001E1E       266          MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
-000012B4  43F9 00001D99            267          LEA     MOVEB, A1
-000012BA  103C 000E                268          MOVE.B  #14, D0
-000012BE  4E4F                     269          TRAP    #15
-000012C0  4EB9 000017FA            270          JSR     EA * Find SRC EA
-000012C6  6000 05B4                271          BRA     DESTEAFINDER * FIND DEST EA
-000012CA                           272  * -> MOVE.L
-000012CA                           273  * Printed using MOVEL String as a variable on the very bottom
-000012CA                           274  OP0010:
-000012CA  13FC 0002 00001E1E       275          MOVE.B  #%10, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
-000012D2  43F9 00001D94            276          LEA     MOVE_PRINT, A1
-000012D8  103C 000E                277          MOVE.B  #14, D0
-000012DC  4E4F                     278          TRAP    #15
-000012DE  4EB9 000017C8            279          JSR     CHECK_MOVEA
-000012E4  43F9 00001DA9            280          LEA     MOVEL, A1
-000012EA  103C 000E                281          MOVE.B  #14, D0
-000012EE  4E4F                     282          TRAP    #15
-000012F0  4EB9 000017FA            283          JSR     EA *Find SRC EA
-000012F6  6000 0584                284          BRA     DESTEAFINDER *FIND DEST EA
-000012FA                           285  * -> MOVE.W
-000012FA                           286  OP0011:
-000012FA  43F9 00001D94            287          LEA     MOVE_PRINT, A1
-00001300  103C 000E                288          MOVE.B  #14, D0
-00001304  4E4F                     289          TRAP    #15
-00001306  4EB9 000017C8            290          JSR     CHECK_MOVEA
-0000130C  43F9 00001DA5            291          LEA     MOVEW, A1
-00001312  103C 000E                292          MOVE.B  #14, D0
-00001316  4E4F                     293          TRAP    #15
-00001318  4EB9 000017FA            294          JSR     EA * FIND SRC EA
-0000131E  6000 055C                295          BRA     DESTEAFINDER *FIND DEST EA
-00001322                           296          
-00001322                           297  *-> NOT
-00001322                           298  OP0100:
-00001322  43F9 00001E01            299          LEA     NOT_OP, A1
-00001328  103C 000E                300          MOVE.B  #14, D0
-0000132C  4E4F                     301          TRAP    #15
-0000132E  E14A                     302          LSL.W   #8, D2
-00001330  3602                     303          MOVE.W  D2, D3 * D3 = SIZE OF INSTRUCTION
-00001332  E04B                     304          LSR.W   #8, D3
-00001334  EC4B                     305          LSR.W   #6, D3
-00001336  3202                     306          MOVE.W  D2, D1 * D1 = EA OPMODE
-00001338  E549                     307          LSL.W   #2, D1
-0000133A  E049                     308          LSR.W   #8, D1
-0000133C  EA49                     309          LSR.W   #5, D1
-0000133E  3002                     310          MOVE.W  D2, D0 * D0 = EA REGISTER
-00001340  EB48                     311          LSL.W   #5, D0
-00001342  E048                     312          LSR.W   #8, D0
-00001344  EA48                     313          LSR.W   #5, D0
-00001346  C6FC 0006                314          MULU    #6, D3 * Multiply for JMPTABLE
-0000134A  45F9 00001354            315          LEA     NOT_JMPTable, A2
-00001350  4EB2 3000                316          JSR     (A2, D3)
-00001354                           317          
-00001354                           318  NOT_JMPTable
-00001354  4EF9 0000136C            319          JMP     NOT_SIZE00
-0000135A  4EF9 0000138E            320          JMP     NOT_SIZE01
-00001360  4EF9 000013A8            321          JMP     NOT_SIZE10
-00001366  4EF9 000013C2            322          JMP     NOT_SIZE11
-0000136C                           323  *NOT.B
-0000136C                           324  NOT_SIZE00:
-0000136C  13FC 0000 00001E1E       325          MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
-00001374  1A00                     326          MOVE.B  D0, D5  *TEMP STORAGE FOR D0
-00001376  43F9 00001DA1            327          LEA     SIZE_B, A1
-0000137C  103C 000E                328          MOVE.B  #14, D0
-00001380  4E4F                     329          TRAP    #15
-00001382  1005                     330          MOVE.B  D5, D0 * RETURN TEMP STORAGE
-00001384  4EB9 00001818            331          JSR     EACHECKER
-0000138A  6000 FD66                332          BRA     AddrLoop
-0000138E                           333  * NOT.W
-0000138E                           334  NOT_SIZE01: 
-0000138E  1A00                     335          MOVE.B  D0, D5 *TEMP STORAGE FOR D0
-00001390  43F9 00001D8C            336          LEA     SIZE_WORD, A1
-00001396  103C 000E                337          MOVE.B  #14, D0
-0000139A  4E4F                     338          TRAP    #15
-0000139C  1005                     339          MOVE.B  D5, D0 * RETURN TEMP STORAGE
-0000139E  4EB9 00001818            340          JSR     EACHECKER
-000013A4  6000 FD4C                341          BRA     AddrLoop
-000013A8                           342  * NOT.L
-000013A8                           343  NOT_SIZE10:
-000013A8  1A00                     344          MOVE.B  D0, D5 *TEMP STORAGE FOR D0
-000013AA  43F9 00001D90            345          LEA     SIZE_LONG, A1
-000013B0  103C 000E                346          MOVE.B  #14, D0
-000013B4  4E4F                     347          TRAP    #15
-000013B6  1005                     348          MOVE.B  D5, D0 * RETURN TEMP STORAGE
-000013B8  4EB9 00001818            349          JSR     EACHECKER
-000013BE  6000 FD32                350          BRA     AddrLoop
-000013C2                           351  NOT_SIZE11:
-000013C2  6000 0854                352          BRA     PRINTINVALIDEA
+00009000                            23      ORG    $9000
+00009000                            24  TESTER:
+00009000  4611                      25          NOT.B       (A1)
+00009002  4659                      26          NOT.W       (A1)+
+00009004  4693                      27          NOT.L       (A3)
+00009006  1200                      28          MOVE.B    D0,D1
+00009008  1200                      29          MOVE.B    D0,D1
+0000900A                            30  
+0000900A                            31    
+0000900A                            32  
+00001000                            33      ORG    $1000
+00001000                            34  *=================================================================
+00001000                            35  *                     THIS IS OUR MAIN METHOD
+00001000                            36  *               Don't throw random stuff in it, keep it to a minimum
+00001000                            37  
+00001000                            38  START:                  ; first instruction of program
+00001000  4EB9 00001006             39          JSR     GETINPUT
+00001006                            40  *=================================================================
+00001006                            41  *---------------Get starting and ending addresss------- Kelvin
+00001006                            42  *--------------- PRE: will be using D0, D5, A1
+00001006                            43  *----------------Post: Address will be stored in addrStart and addrEnd
+00001006                            44  GETINPUT:
+00001006  4EB9 00001D1A             45          JSR     CLRREG    *clean registers to restart program
+0000100C  4EB9 00001D2C             46          JSR     CLRAREG
+00001012  23FC 00000000 00001ED4    47          MOVE.L  #0, ScreenCounter * initalize screenCounter
+0000101C  43F9 00001D56             48          LEA     WELCOME, A1
+00001022  103C 000E                 49          MOVE.B  #14,    D0
+00001026  4E4F                      50          TRAP    #15
+00001028  327C 0000                 51          MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
+0000102C  103C 0002                 52          MOVE.B  #2,D0
+00001030  4E4F                      53          TRAP    #15
+00001032  2801                      54          MOVE.L  D1, D4   // Move input length into D4, See Convert Pre conditon
+00001034  7000                      55          MOVE.L  #$0, d0  // intitiate counter
+00001036  4EB9 00001188             56          JSR     LOOP    // Convert starting address into hex
+0000103C  23C5 00001EC8             57          MOVE.L  D5, addrStart
+00001042  43F9 00001D76             58          LEA     WELCOME2, A1
+00001048  103C 000E                 59          MOVE.B  #14,    D0
+0000104C  4E4F                      60          TRAP    #15
+0000104E  327C 0000                 61          MOVEA   #$0, A1 // Clear A1 to prevent screen freeze
+00001052  103C 0002                 62          MOVE.B  #2,D0
+00001056  4E4F                      63          TRAP    #15
+00001058  4245                      64          CLR     D5       // Clear D5 for exit address
+0000105A  1801                      65          MOVE.B  D1, D4   // Move input length into D4, See Convert Pre conditon
+0000105C  103C 0000                 66          MOVE.B  #$0, d0  // intitiate counter
+00001060  4EB9 00001188             67          JSR     LOOP    // Convert Ending address int Hex
+00001066  23C5 00001ECC             68          MOVE.L  D5, addrEnd
+0000106C  4EB9 00001086             69          JSR     CheckRange
+00001072  2039 00001EC8             70          MOVE.L  addrStart, D0
+00001078  2C40                      71          MOVEA.L D0, A6
+0000107A  4EB9 00001206             72          JSR     OPCODE
+00001080  4EF9 000010E0             73          JMP     END
+00001086                            74  
+00001086                            75  *==================================================================
+00001086                            76  *-----------------Check if the range is above or under the limit
+00001086                            77  *------------------Pre: addrStart and addrEnd has begin and end values
+00001086                            78          
+00001086                            79  CheckRange:
+00001086  2C79 00001EC8             80          MOVE.L  AddrStart, A6
+0000108C  203C 00003000             81          MOVE.L  #LowerLimit, D0
+00001092  B08E                      82          CMP.L   A6, D0
+00001094  6E00 0C58                 83          BGT     PRINTINVALIDADDRESS
+00001098  203C 00FFFFFE             84          MOVE.L  #UpperLimit, D0
+0000109E  B08E                      85          CMP.L   A6, D0
+000010A0  6D00 0C4C                 86          BLT     PRINTINVALIDADDRESS
+000010A4  2039 00001EC8             87          MOVE.L  AddrStart, D0
+000010AA  0800 0000                 88          BTST    #0, D0
+000010AE  6600 0C3E                 89          BNE     PRINTInvalidAddress
+000010B2  2C79 00001ECC             90          MOVE.L  AddrEnd, A6
+000010B8  203C 00003000             91          MOVE.L  #LowerLimit, D0
+000010BE  B08E                      92          CMP.L   A6, D0
+000010C0  6E00 0C2C                 93          BGT     PRINTINVALIDADDRESS
+000010C4  203C 00FFFFFE             94          MOVE.L  #UpperLimit, D0
+000010CA  B08E                      95          CMP.L   A6, D0
+000010CC  6D00 0C20                 96          BLT     PRINTINVALIDADDRESS
+000010D0  2039 00001ECC             97          MOVE.L  AddrEnd, D0
+000010D6  0800 0000                 98          BTST    #0, D0
+000010DA  6600 0C12                 99          BNE     PrintInvalidAddress
+000010DE  4E75                     100          RTS
+000010E0                           101  
+000010E0                           102  END:
+000010E0  43F9 00001E15            103          LEA     TY_Message, A1
+000010E6  103C 000E                104          MOVE.B  #14, D0
+000010EA  4E4F                     105          TRAP    #15
+000010EC  103C 0009                106          MOVE.B  #9, D0
+000010F0  4E4F                     107          TRAP    #15
+000010F2                           108          
+000010F2                           109  *Please start from here Annabelle
+000010F2                           110  AddrLoop:
+000010F2  4EB9 00001D1A            111          JSR     CLRREG    *clean registers to restart program
+000010F8  4EB9 00001D2C            112          JSR     CLRAREG
+000010FE  43F9 00001E12            113          LEA     PRINT_NEXTLINE, A1
+00001104  103C 000E                114          MOVE.B  #14, D0
+00001108  4E4F                     115          TRAP    #15
+0000110A  2879 00001ECC            116          MOVE.L  addrEnd, A4
+00001110  B9CE                     117          CMP.L   A6, A4
+00001112  6F00 0018                118          BLE     CHECK_CONT
+00001116  5239 00001ED4            119          ADD.B   #1, ScreenCounter
+0000111C  0C39 001E 00001ED4       120          CMP.B   #30, ScreenCounter
+00001124  6700 0030                121          BEQ     Next_Screen
+00001128  6000 00DC                122          BRA     OPCODE
+0000112C                           123          
+0000112C                           124  *===========Check if user wants to continue
+0000112C                           125  CHECK_CONT:
+0000112C  43F9 00001DE3            126          LEA     Continue_Program, A1
+00001132  103C 000E                127          MOVE.B  #14, D0
+00001136  4E4F                     128          TRAP    #15
+00001138  43F8 0050                129          LEA     YesNoStorage, A1
+0000113C  103C 0002                130          MOVE.B  #2, D0
+00001140  4E4F                     131          TRAP    #15
+00001142  0C11 0059                132          CMP.B   #$59, (A1) * Yes
+00001146  6700 FEBE                133          BEQ     GETINPUT
+0000114A  0C11 0079                134          CMP.B   #$79, (A1)
+0000114E  6700 FEB6                135          BEQ     GETINPUT
+00001152  4EF8 10E0                136          JMP     END
+00001156                           137          
+00001156                           138  NEXT_SCREEN:
+00001156  13FC 0000 00001ED4       139          MOVE.B  #0, ScreenCounter
+0000115E  43F9 00001DFB            140          LEA     Continue_Screen, A1
+00001164  103C 000E                141          MOVE.B  #14, D0
+00001168  4E4F                     142          TRAP    #15
+0000116A  43F8 0050                143          LEA     YesNoStorage, A1
+0000116E  103C 0002                144          MOVE.B  #2, D0
+00001172  4E4F                     145          TRAP    #15
+00001174  0C11 0059                146          CMP.B   #$59, (A1) * Yes
+00001178  6700 FF78                147          BEQ     AddrLoop
+0000117C  0C11 0079                148          CMP.B   #$79, (A1)
+00001180  6700 FF70                149          BEQ     AddrLoop
+00001184  4EF8 10E0                150          JMP     END
+00001188                           151          
+00001188                           152  LOOP
+00001188                           153  
+00001188  B880                     154          CMP.L   D0, D4  // Loop until length of word reached
+0000118A  6E00 0006                155          BGT     CONVERT
+0000118E  5480                     156          ADD.L   #$2, D0 
+00001190  4E75                     157          RTS 
+00001192                           158  
+00001192                           159  *=================================================================
+00001192                           160  *---------------NUMBER CONVERSION FROM INPUT TO HEX------- Kelvin
+00001192                           161  *PRE      D4 must contain input length, d0 must be 0
+00001192                           162  *POST     D5 WILL CONTAIN ADDRESS VALUE IN HEX        
+00001192                           163  CONVERT:
+00001192  5280                     164          ADDQ.L  #$1, D0 // increment counter
+00001194  1211                     165          move.b  (A1),D1    // Get next bit from Input
+00001196  5289                     166          adda.L  #1, A1      // Increment Input
+00001198  0401 0030                167          sub.b   #$30,D1     //
+0000119C  B23C 0010                168          cmp.b   #$10,D1   // Check if value is larger than 10
+000011A0  6E00 000A                169          bgt     CHAR      // Find Hex
+000011A4  1401                     170          move.b  D1, D2    // IF it is less than 10
+000011A6  4EF9 000011DC            171          JMP     ADDVAL        
+000011AC                           172  CHAR:
+000011AC  B23C 0011                173          CMP.B   #$11, D1 // Convert each hex into an appropriate hex
+000011B0  6700 0030                174          BEQ     A
+000011B4  B23C 0012                175          CMP.B   #$12, D1
+000011B8  6700 002E                176          BEQ     B
+000011BC  B23C 0013                177          CMP.B   #$13, D1
+000011C0  6700 002C                178          BEQ     C
+000011C4  B23C 0014                179          CMP.B   #$14, D1
+000011C8  6700 002A                180          BEQ     D
+000011CC  B23C 0015                181          CMP.B   #$15, D1
+000011D0  6700 0028                182          BEQ     E
+000011D4  B23C 0016                183          CMP.B   #$16, D1
+000011D8  6700 0026                184          BEQ     F
+000011DC                           185  
+000011DC                           186  ADDVAL:
+000011DC  E98D                     187          lsl.l    #$4, D5 // Shift based on position
+000011DE  DA82                     188          add.l    D2, D5 //Add value into Input
+000011E0  60A6                     189          BRA      LOOP
+000011E2                           190      
+000011E2                           191  A:
+000011E2  740A                     192          MOVE.L  #$A, D2 
+000011E4  4EF8 11DC                193          jmp ADDVAL
+000011E8                           194  B:
+000011E8  740B                     195          MOVE.L  #$B, D2
+000011EA  4EF8 11DC                196          jmp ADDVAL
+000011EE                           197  C:
+000011EE  740C                     198          MOVE.L  #$C, D2
+000011F0  4EF8 11DC                199          jmp ADDVAL
+000011F4                           200  D:
+000011F4  740D                     201          MOVE.L  #$D, D2
+000011F6  4EF8 11DC                202          jmp ADDVAL
+000011FA                           203  E:
+000011FA  740E                     204          MOVE.L  #$E, D2
+000011FC  4EF8 11DC                205          jmp ADDVAL
+00001200                           206  F:
+00001200  740F                     207          MOVE.L  #$F, D2
+00001202  4EF8 11DC                208          jmp ADDVAL
+00001206                           209          
+00001206                           210  *=======================================================================
+00001206                           211  *---------Find the first 4 of instruction and determines the instruction
+00001206                           212  OPCODE:
+00001206  4280                     213          CLR.L   D0
+00001208  4281                     214          CLR.L   D1
+0000120A  4282                     215          CLR.L   D2
+0000120C  220E                     216          MOVE.L  A6, D1  * PRINT ADDRESS PER LINE
+0000120E  143C 0010                217          MOVE.B  #16, D2
+00001212  103C 000F                218          MOVE.B  #15, D0
+00001216  4E4F                     219          TRAP    #15
+00001218  227C 00000000            220          MOVE.L  #$00000000, A1
+0000121E  43F9 00001E3A            221          LEA     SPACER, A1
+00001224  103C 000E                222          MOVE.B  #14, D0
+00001228  4E4F                     223          TRAP    #15
+0000122A  4280                     224          CLR.L     D0
+0000122C  4281                     225          CLR.L     D1
+0000122E  4282                     226          CLR.L     D2
+00001230  321E                     227          MOVE.W  (A6)+,D1
+00001232  2401                     228          MOVE.L  D1, D2  //D2 now containse the opperand EA!!!
+00001234  E849                     229          LSR.W   #4, D1
+00001236  E849                     230          LSR.W   #4, D1
+00001238  E849                     231          LSR.W   #4, D1  //Right Shift 3 times
+0000123A  1001                     232          MOVE.B  D1, D0  // OPCODE FOUND
+0000123C  B03C 000E                233          CMP.B   #%1110, D0
+00001240  6E00 0ABC                234          BGT     PRINTDATA
+00001244  C0FC 0006                235          MULU    #6, D0
+00001248                           236          *MOVE.B  D0, OpCodeSize
+00001248  45F9 00001252            237          LEA     JMPTABLE, A2
+0000124E  4EF2 0000                238          JMP     (A2, D0)
+00001252                           239          
+00001252                           240  *========================================================================
+00001252                           241  *--------Jump table used for different opcode!!! Please orgainze well using decimal
+00001252                           242  *------- Add your instructions here
+00001252                           243  JMPTABLE
+00001252  4EF9 000012AC            244          JMP     OP0000
+00001258  4EF9 000012AC            245          JMP     OP0001 *MOVEB
+0000125E  4EF9 000012CA            246          JMP     OP0010 *MOVEL
+00001264  4EF9 000012FA            247          JMP     OP0011 *MOVEW
+0000126A  4EF9 00001322            248          JMP     OP0100 *NOT
+00001270  4EF9 000013C6            249          JMP     OP0101
+00001276  4EF9 00001476            250          JMP     OP0110
+0000127C  4EF9 00001476            251          JMP     OP0111
+00001282  4EF9 000014B2            252          JMP     OP1000 *OR
+00001288  4EF9 00001476            253          JMP     OP1001 *SUB
+0000128E  4EF9 000014F6            254          JMP     OP1010
+00001294  4EF9 000014F6            255          JMP     OP1011
+0000129A  4EF9 000014F6            256          JMP     OP1100 *AND
+000012A0  4EF9 00001532            257          JMP     OP1101 *ADD
+000012A6  4EF9 0000156E            258          JMP     OP1110 *ROR ROL
+000012AC                           259  
+000012AC                           260  *=====================================================================    
+000012AC                           261  *--------------D2 must contain Entire opcode for everything below
+000012AC                           262  OP0000:
+000012AC                           263  *-> MOVE.B
+000012AC                           264  OP0001:
+000012AC  13FC 0000 00001ED8       265          MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
+000012B4  43F9 00001E4F            266          LEA     MOVEB, A1
+000012BA  103C 000E                267          MOVE.B  #14, D0
+000012BE  4E4F                     268          TRAP    #15
+000012C0  4EB9 000018A8            269          JSR     EA * Find SRC EA
+000012C6  6000 066A                270          BRA     DESTEAFINDER * FIND DEST EA
+000012CA                           271  * -> MOVE.L
+000012CA                           272  * Printed using MOVEL String as a variable on the very bottom
+000012CA                           273  OP0010:
+000012CA  13FC 0002 00001ED8       274          MOVE.B  #%10, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
+000012D2  43F9 00001E4A            275          LEA     MOVE_PRINT, A1
+000012D8  103C 000E                276          MOVE.B  #14, D0
+000012DC  4E4F                     277          TRAP    #15
+000012DE  4EB9 00001876            278          JSR     CHECK_MOVEA
+000012E4  43F9 00001E5F            279          LEA     MOVEL, A1
+000012EA  103C 000E                280          MOVE.B  #14, D0
+000012EE  4E4F                     281          TRAP    #15
+000012F0  4EB9 000018A8            282          JSR     EA *Find SRC EA
+000012F6  6000 063A                283          BRA     DESTEAFINDER *FIND DEST EA
+000012FA                           284  * -> MOVE.W
+000012FA                           285  OP0011:
+000012FA  43F9 00001E4A            286          LEA     MOVE_PRINT, A1
+00001300  103C 000E                287          MOVE.B  #14, D0
+00001304  4E4F                     288          TRAP    #15
+00001306  4EB9 00001876            289          JSR     CHECK_MOVEA
+0000130C  43F9 00001E5B            290          LEA     MOVEW, A1
+00001312  103C 000E                291          MOVE.B  #14, D0
+00001316  4E4F                     292          TRAP    #15
+00001318  4EB9 000018A8            293          JSR     EA * FIND SRC EA
+0000131E  6000 0612                294          BRA     DESTEAFINDER *FIND DEST EA
+00001322                           295          
+00001322                           296  *-> NOT
+00001322                           297  OP0100:
+00001322  43F9 00001EBC            298          LEA     NOT_OP, A1
+00001328  103C 000E                299          MOVE.B  #14, D0
+0000132C  4E4F                     300          TRAP    #15
+0000132E  E14A                     301          LSL.W   #8, D2
+00001330  3602                     302          MOVE.W  D2, D3 * D3 = SIZE OF INSTRUCTION
+00001332  E04B                     303          LSR.W   #8, D3
+00001334  EC4B                     304          LSR.W   #6, D3
+00001336  3202                     305          MOVE.W  D2, D1 * D1 = EA OPMODE
+00001338  E549                     306          LSL.W   #2, D1
+0000133A  E049                     307          LSR.W   #8, D1
+0000133C  EA49                     308          LSR.W   #5, D1
+0000133E  3002                     309          MOVE.W  D2, D0 * D0 = EA REGISTER
+00001340  EB48                     310          LSL.W   #5, D0
+00001342  E048                     311          LSR.W   #8, D0
+00001344  EA48                     312          LSR.W   #5, D0
+00001346  C6FC 0006                313          MULU    #6, D3 * Multiply for JMPTABLE
+0000134A  45F9 00001354            314          LEA     NOT_JMPTable, A2
+00001350  4EB2 3000                315          JSR     (A2, D3)
+00001354                           316          
+00001354                           317  NOT_JMPTable
+00001354  4EF9 0000136C            318          JMP     NOT_SIZE00
+0000135A  4EF9 0000138E            319          JMP     NOT_SIZE01
+00001360  4EF9 000013A8            320          JMP     NOT_SIZE10
+00001366  4EF9 000013C2            321          JMP     NOT_SIZE11
+0000136C                           322  *NOT.B
+0000136C                           323  NOT_SIZE00:
+0000136C  13FC 0000 00001ED8       324          MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
+00001374  1A00                     325          MOVE.B  D0, D5  *TEMP STORAGE FOR D0
+00001376  43F9 00001E57            326          LEA     SIZE_B, A1
+0000137C  103C 000E                327          MOVE.B  #14, D0
+00001380  4E4F                     328          TRAP    #15
+00001382  1005                     329          MOVE.B  D5, D0 * RETURN TEMP STORAGE
+00001384  4EB9 000018C6            330          JSR     EACHECKER
+0000138A  6000 FD66                331          BRA     AddrLoop
+0000138E                           332  * NOT.W
+0000138E                           333  NOT_SIZE01: 
+0000138E  1A00                     334          MOVE.B  D0, D5 *TEMP STORAGE FOR D0
+00001390  43F9 00001E42            335          LEA     SIZE_WORD, A1
+00001396  103C 000E                336          MOVE.B  #14, D0
+0000139A  4E4F                     337          TRAP    #15
+0000139C  1005                     338          MOVE.B  D5, D0 * RETURN TEMP STORAGE
+0000139E  4EB9 000018C6            339          JSR     EACHECKER
+000013A4  6000 FD4C                340          BRA     AddrLoop
+000013A8                           341  * NOT.L
+000013A8                           342  NOT_SIZE10:
+000013A8  1A00                     343          MOVE.B  D0, D5 *TEMP STORAGE FOR D0
+000013AA  43F9 00001E46            344          LEA     SIZE_LONG, A1
+000013B0  103C 000E                345          MOVE.B  #14, D0
+000013B4  4E4F                     346          TRAP    #15
+000013B6  1005                     347          MOVE.B  D5, D0 * RETURN TEMP STORAGE
+000013B8  4EB9 000018C6            348          JSR     EACHECKER
+000013BE  6000 FD32                349          BRA     AddrLoop
+000013C2                           350  NOT_SIZE11:
+000013C2  6000 090A                351          BRA     PRINTINVALIDEA
+000013C6                           352  
 000013C6                           353  
-000013C6                           354              
+000013C6                           354  *-> ADDQ            
 000013C6                           355  OP0101:
-000013C6                           356          
-000013C6                           357  OP0110:
-000013C6                           358  OP0111:
-000013C6                           359          
-000013C6                           360  
-000013C6                           361  
-000013C6                           362  
-000013C6                           363  * -> SUB
-000013C6                           364  * Splitting Sub into OPMODE and Register value
-000013C6                           365  OP1001:
-000013C6  43F9 00001DF2            366          LEA     SUBTRACT, A1
-000013CC  103C 000E                367          MOVE.B  #14, D0
-000013D0  4E4F                     368          TRAP    #15
-000013D2  E94A                     369          LSL.W   #4, D2
-000013D4  3602                     370          MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
-000013D6  E04B                     371          LSR.W   #8, D3 * D3 = D register
-000013D8  EA4B                     372          LSR.W   #5, D3
-000013DA  3802                     373          MOVE.W  D2, D4 *D4 = SubOPMODE
-000013DC  E74C                     374          LSL.W   #3, D4
-000013DE  E04C                     375          LSR.W   #8, D4
-000013E0  EA4C                     376          LSR.W   #5, D4
-000013E2  3202                     377          MOVE.W  D2, D1 * D1 = EA Mode
-000013E4  ED49                     378          LSL.W   #6, D1
-000013E6  E049                     379          LSR.W   #8, D1
-000013E8  EA49                     380          LSR.W   #5, D1
-000013EA  3002                     381          MOVE.W  D2, D0 * D0 = EA register
-000013EC  E148                     382          LSL.W   #8, D0
-000013EE  E348                     383          LSL.W   #1, D0
-000013F0  E048                     384          LSR.W   #8, D0
-000013F2  EA48                     385          LSR.W   #5, D0
-000013F4  45F9 0000163E            386          LEA     SubTable, A2
-000013FA  C8FC 0006                387          MULU    #6, D4
-000013FE  4EB2 4000                388          JSR     (A2, D4)
-00001402                           389  * -> OR
-00001402                           390  * Splitting AND into OPMODE and Register value       
-00001402                           391  OP1000:
-00001402  43F9 00001DFE            392          LEA     OR, A1
-00001408  103C 000E                393          MOVE.B  #14, D0
-0000140C  4E4F                     394          TRAP    #15
-0000140E  E94A                     395          LSL.W   #4, D2
-00001410  3602                     396          MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
-00001412  E04B                     397          LSR.W   #8, D3 * D3 = D register
-00001414  EA4B                     398          LSR.W   #5, D3
-00001416  3802                     399          MOVE.W  D2, D4 *D4 = SubOPMODE
-00001418  E74C                     400          LSL.W   #3, D4
-0000141A  E04C                     401          LSR.W   #8, D4
-0000141C  EA4C                     402          LSR.W   #5, D4
-0000141E  3202                     403          MOVE.W  D2, D1 * D1 = EA Mode
-00001420  ED49                     404          LSL.W   #6, D1
-00001422  E049                     405          LSR.W   #8, D1
-00001424  EA49                     406          LSR.W   #5, D1
-00001426  B23C 0001                407          CMP.B   #%0001, D1
-0000142A  6700 07EC                408          BEQ     PRINTINVALIDEA
-0000142E  3002                     409          MOVE.W  D2, D0 * D0 = EA register
-00001430  E148                     410          LSL.W   #8, D0
-00001432  E348                     411          LSL.W   #1, D0
-00001434  E048                     412          LSR.W   #8, D0
-00001436  EA48                     413          LSR.W   #5, D0
-00001438  45F9 0000163E            414          LEA     SubTable, A2
-0000143E  C8FC 0006                415          MULU    #6, D4
-00001442  4EB2 4000                416          JSR     (A2, D4)
-00001446                           417  OP1010
-00001446                           418  OP1011
-00001446                           419  * -> AND
-00001446                           420  * Splitting AND into OPMODE and Register value
-00001446                           421  OP1100
-00001446  43F9 00001DFA            422          LEA     AND, A1
-0000144C  103C 000E                423          MOVE.B  #14, D0
-00001450  4E4F                     424          TRAP    #15
-00001452  E94A                     425          LSL.W   #4, D2
-00001454  3602                     426          MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
-00001456  E04B                     427          LSR.W   #8, D3 * D3 = D register
-00001458  EA4B                     428          LSR.W   #5, D3
-0000145A  3802                     429          MOVE.W  D2, D4 *D4 = SubOPMODE
-0000145C  E74C                     430          LSL.W   #3, D4
-0000145E  E04C                     431          LSR.W   #8, D4
-00001460  EA4C                     432          LSR.W   #5, D4
-00001462  3202                     433          MOVE.W  D2, D1 * D1 = EA Mode
-00001464  ED49                     434          LSL.W   #6, D1
-00001466  E049                     435          LSR.W   #8, D1
-00001468  EA49                     436          LSR.W   #5, D1
-0000146A  3002                     437          MOVE.W  D2, D0 * D0 = EA register
-0000146C  E148                     438          LSL.W   #8, D0
-0000146E  E348                     439          LSL.W   #1, D0
-00001470  E048                     440          LSR.W   #8, D0
-00001472  EA48                     441          LSR.W   #5, D0
-00001474  45F9 0000163E            442          LEA     SubTable, A2
-0000147A  C8FC 0006                443          MULU    #6, D4
-0000147E  4EB2 4000                444          JSR     (A2, D4)
-00001482                           445          
-00001482                           446  * -> ADD
-00001482                           447  * Spltting Add into OPMODE and Register Value
-00001482                           448  OP1101:
-00001482  43F9 00001DF6            449          LEA     ADDITION, A1
-00001488  103C 000E                450          MOVE.B  #14, D0
-0000148C  4E4F                     451          TRAP    #15
-0000148E  E94A                     452          LSL.W   #4, D2
-00001490  3602                     453          MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
-00001492  E04B                     454          LSR.W   #8, D3 * D3 = D register
-00001494  EA4B                     455          LSR.W   #5, D3
-00001496  3802                     456          MOVE.W  D2, D4 *D4 = SubOPMODE
-00001498  E74C                     457          LSL.W   #3, D4
-0000149A  E04C                     458          LSR.W   #8, D4
-0000149C  EA4C                     459          LSR.W   #5, D4
-0000149E  3202                     460          MOVE.W  D2, D1 * D1 = EA Mode
-000014A0  ED49                     461          LSL.W   #6, D1
-000014A2  E049                     462          LSR.W   #8, D1
-000014A4  EA49                     463          LSR.W   #5, D1
-000014A6  3002                     464          MOVE.W  D2, D0 * D0 = EA register
-000014A8  E148                     465          LSL.W   #8, D0
-000014AA  E348                     466          LSL.W   #1, D0
-000014AC  E048                     467          LSR.W   #8, D0
-000014AE  EA48                     468          LSR.W   #5, D0
-000014B0  45F9 0000163E            469          LEA     SubTable, A2
-000014B6  C8FC 0006                470          MULU    #6, D4
-000014BA  4EB2 4000                471          JSR     (A2, D4)
-000014BE                           472  
-000014BE                           473  *-> ROL, ROR        
-000014BE                           474  OP1110:
-000014BE  E94A                     475          LSL.W   #4, D2
-000014C0  3C02                     476          MOVE.W  D2, D6 * Shift size
-000014C2  E04E                     477          LSR.W   #8, D6
-000014C4  EA4E                     478          LSR.W   #5, D6
-000014C6  3602                     479          MOVE.W  D2, D3 * L/R
-000014C8  E74B                     480          LSL.W   #3, D3
-000014CA  E04B                     481          LSR.W   #8, D3
-000014CC  EE4B                     482          LSR.W   #7, D3
-000014CE  3802                     483          MOVE.W  D2, D4 * Size field
-000014D0  E94C                     484          LSL.W   #4, D4
-000014D2  E04C                     485          LSR.W   #8, D4
-000014D4  EC4C                     486          LSR.W   #6, D4
-000014D6  3202                     487          MOVE.W  D2, D1 *immediate/register
-000014D8  ED49                     488          LSL.W   #6, D1
-000014DA  E049                     489          LSR.W   #8, D1
-000014DC  EE49                     490          LSR.W   #7, D1
-000014DE  3A02                     491          MOVE.W  D2, D5 * Shift Register
-000014E0  E14D                     492          LSL.W   #8, D5
-000014E2  E34D                     493          LSL.W   #1, D5
-000014E4  E04D                     494          LSR.W   #8, D5
-000014E6  EA4D                     495          LSR.W   #5, D5
-000014E8  C6FC 0006                496          MULU    #6, D3
-000014EC  43F9 000014F6            497          LEA     RotateTable, A1
-000014F2  4EB1 3000                498          JSR     (A1, D3)
-000014F6                           499          
-000014F6                           500  RotateTable:
-000014F6  4EF9 00001502            501          JMP     Rotate_RIGHT
-000014FC  4EF9 00001514            502          JMP     Rotate_LEFT
-00001502                           503          
-00001502                           504  Rotate_Right
-00001502  43F9 00001E09            505          LEA     ROR, A1
-00001508  103C 000E                506          MOVE.B  #14, D0
-0000150C  4E4F                     507          TRAP    #15
-0000150E  4EF9 00001526            508          JMP     Rotate_Size_Table
-00001514                           509          
-00001514                           510  Rotate_Left
-00001514  43F9 00001E05            511          LEA     ROL, A1
-0000151A  103C 000E                512          MOVE.B  #14, D0
-0000151E  4E4F                     513          TRAP    #15
-00001520  4EF9 00001526            514          JMP     Rotate_Size_Table
-00001526                           515          
-00001526                           516  Rotate_Size_TABLE:
-00001526  B83C 0000                517          CMP.B   #%000, D4
-0000152A  6700 001A                518          BEQ     Rotate_B
-0000152E  B83C 0001                519          CMP.B   #%001, D4
-00001532  6700 002E                520          BEQ     Rotate_W
-00001536  B83C 0002                521          CMP.B   #%010, D4
-0000153A  6700 0042                522          BEQ     Rotate_L
-0000153E  B83C 0003                523          CMP.B   #%11, D4
-00001542  6700 0056                524          BEQ     Rotate_EA
-00001546                           525          
-00001546                           526  Rotate_B
-00001546  43F9 00001D88            527          LEA     SIZE_BYTE,A1
-0000154C  103C 000E                528          MOVE.B  #14, D0
-00001550  4E4F                     529          TRAP    #15
-00001552  B23C 0000                530          CMP.B   #%0, D1
-00001556  6700 00A0                531          BEQ     Rotate_Print_immediate
-0000155A  B23C 0001                532          CMP.B   #%1, D1
-0000155E  6700 007E                533          BEQ     Rotate_Print_Register
-00001562                           534          
-00001562                           535  Rotate_W
-00001562  43F9 00001D8C            536          LEA     SIZE_WORD,A1
-00001568  103C 000E                537          MOVE.B  #14, D0
-0000156C  4E4F                     538          TRAP    #15
-0000156E  B23C 0000                539          CMP.B   #%0, D1
-00001572  6700 0084                540          BEQ     Rotate_Print_immediate
-00001576  B23C 0001                541          CMP.B   #%1, D1
-0000157A  6700 0062                542          BEQ     Rotate_Print_Register
-0000157E                           543  
-0000157E                           544  Rotate_L
-0000157E  43F9 00001D90            545          LEA     SIZE_LONG,A1
-00001584  103C 000E                546          MOVE.B  #14, D0
-00001588  4E4F                     547          TRAP    #15
-0000158A  B23C 0000                548          CMP.B   #%0, D1
-0000158E  6700 0068                549          BEQ     Rotate_Print_immediate
-00001592  B23C 0001                550          CMP.B   #%1, D1
-00001596  6700 0046                551          BEQ     Rotate_Print_Register
-0000159A                           552          
-0000159A                           553  Rotate_EA
-0000159A  13FC 0001 00001E1E       554          MOVE.B  #%01, OpCodeSize
-000015A2  43F9 00001D84            555          LEA     SPACER, A1
-000015A8  103C 000E                556          MOVE.B  #14, D0
-000015AC  4E4F                     557          TRAP    #15
-000015AE  1005                     558          MOVE.B  D5, D0
-000015B0  1202                     559          MOVE.B  D2, D1
-000015B2  ED49                     560          LSL.W   #6, D1
-000015B4  E049                     561          LSR.W   #8, D1
-000015B6  EA49                     562          LSR.W   #5, D1
-000015B8                           563          
-000015B8                           564  ROTATE_EACHECKER:
-000015B8  B23C 0002                565          CMP.B   #%0010, D1
-000015BC  6700 035A                566          BEQ     JMPTO_DEST_INDR_ADDR_REG
-000015C0  B23C 0003                567          CMP.B   #%0011, D1
-000015C4  6700 0352                568          BEQ     JMPTO_DEST_INDR_ADDR_REG
-000015C8  B23C 0004                569          CMP.B   #%0100, D1
-000015CC  6700 034A                570          BEQ     JMPTO_DEST_INDR_ADDR_REG
-000015D0  4EF9 00001C18            571          JMP     PRINTINVALIDEA
-000015D6  B23C 0007                572          CMP.B   #%0111, D1
-000015DA  6700 0400                573          BEQ     JMPTO_SRC_IMMEDIATE
-000015DE                           574          
-000015DE                           575  Rotate_Print_REGISTER
-000015DE  1006                     576          MOVE.B  D6, D0
-000015E0  123C 0000                577          MOVE.B  #%000, D1
-000015E4  4EB9 00001818            578          JSR     EACHECKER
-000015EA  1005                     579          MOVE.B  D5, D0
-000015EC  4241                     580          CLR     D1
-000015EE  4EB9 0000184E            581          JSR     DESTEACHECKER
-000015F4  4EF8 10F2                582          JMP     AddrLoop
-000015F8                           583          
-000015F8                           584  Rotate_Print_immediate
-000015F8  43F9 00001DF0            585          LEA     POUND_SIGN, A1
-000015FE  103C 000E                586          MOVE.B  #14, D0
-00001602  4E4F                     587          TRAP    #15
-00001604  BC3C 0000                588          CMP.B   #%0000, D6
-00001608  6700 0024                589          BEQ     PRINT8
-0000160C  1206                     590          MOVE.B  D6, D1
-0000160E  143C 000A                591          MOVE.B  #10, D2
-00001612  103C 000F                592          MOVE.B  #15, D0
-00001616  4E4F                     593          TRAP    #15
-00001618                           594          
-00001618                           595  Rotate_Print_ImmediateCONT:
-00001618  4EB9 00001C0A            596          JSR     PRINTCOMMA
-0000161E  1005                     597          MOVE.B  D5, D0
-00001620  123C 0000                598          MOVE.B  #%000, D1
-00001624  4EB9 0000184E            599          JSR     DESTEACHECKER
-0000162A  4EF8 10F2                600          JMP     AddrLoop
-0000162E                           601  
-0000162E                           602  PRINT8:
-0000162E  1204                     603          MOVE.B  D4, D1
-00001630  143C 000A                604          MOVE.B  #10, D2
-00001634  103C 000F                605          MOVE.B  #15, D0
-00001638  4E4F                     606          TRAP    #15
-0000163A  4EF8 1618                607          JMP     Rotate_Print_ImmediateCONT
-0000163E                           608          
-0000163E                           609  * End of ROR, ROL, (Kelvin)                
-0000163E                           610          
-0000163E                           611  * =============================================
-0000163E                           612  * JMP Table for SUB OPMODES
-0000163E                           613  SubTable:
-0000163E  4EF9 0000166E            614          JMP     OPMODE000 * BYTE  EA->DN
-00001644  4EF9 00001688            615          JMP     OPMODE001 * WORD  RA->DN  
-0000164A  4EF9 0000169A            616          JMP     OPMODE010 * LONG  EA->DN 
-00001650  4EF9 000016AC            617          JMP     OPMODE011 * ADDA  WORD
-00001656  4EF9 000016DA            618          JMP     OPMODE100 * BYTE  DN->EA
-0000165C  4EF9 000016F2            619          JMP     OPMODE101 * BYTE  DN->EA
-00001662  4EF9 0000170A            620          JMP     OPMODE110 * BYTE  DN->EA
-00001668  4EF9 00001722            621          JMP     OPMODE111 * ADDA  LONG
-0000166E                           622          
-0000166E                           623  OPMODE000:
-0000166E  13FC 0000 00001E1E       624          MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
-00001676  1A00                     625          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
-00001678  43F9 00001D88            626          LEA     SIZE_BYTE, A1
-0000167E  103C 000E                627          MOVE.B  #14, D0
-00001682  4E4F                     628          TRAP    #15
-00001684  6000 00DC                629          BRA     Sub_OPMODE_FIRST
-00001688                           630  OPMODE001
-00001688  1A00                     631          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
-0000168A  43F9 00001D8C            632          LEA     SIZE_Word, A1
-00001690  103C 000E                633          MOVE.B  #14, D0
-00001694  4E4F                     634          TRAP    #15
-00001696  6000 00CA                635          BRA     Sub_OPMODE_FIRST
-0000169A                           636  OPMODE010
-0000169A  1A00                     637          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
-0000169C  43F9 00001D90            638          LEA     SIZE_Long, A1
-000016A2  103C 000E                639          MOVE.B  #14, D0
-000016A6  4E4F                     640          TRAP    #15
-000016A8  6000 00B8                641          BRA     Sub_OPMODE_FIRST
-000016AC                           642  *===============================================
-000016AC                           643  *Special OPMODE can only be used by ADD
-000016AC                           644  OPMODE011
-000016AC  0C38 000D 1206           645          CMP.B   #%1101, OpCode
-000016B2  6700 0008                646          BEQ     Special_OPMODE_USED
-000016B6  4EF9 00001C18            647          JMP     PRINTINVALIDEA
-000016BC                           648  Special_OPMODE_USED:
-000016BC  1A00                     649          MOVE.B  D0, D5
-000016BE  43F9 00001DAD            650          LEA     MOVEA, A1
-000016C4  103C 000E                651          MOVE.B  #14, D0
-000016C8  4E4F                     652          TRAP    #15
-000016CA  43F9 00001D8C            653          LEA     SIZE_WORD, A1
-000016D0  103C 000E                654          MOVE.B  #14, D0
-000016D4  4E4F                     655          TRAP    #15
-000016D6  6000 00CE                656          BRA     Sub_OPMODE_ADDA
-000016DA                           657  OPMODE100
-000016DA  1A00                     658          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
-000016DC  43F9 00001D88            659          LEA     SIZE_BYTE, A1
-000016E2  103C 000E                660          MOVE.B  #14, D0
-000016E6  4E4F                     661          TRAP    #15
-000016E8  4EB9 00001750            662          JSR     Memory_Alterable_Check
-000016EE  6000 0090                663          BRA     Sub_OPMODE_SECOND
-000016F2                           664  OPMODE101
-000016F2  1A00                     665          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
-000016F4  43F9 00001D8C            666          LEA     SIZE_Word, A1
-000016FA  103C 000E                667          MOVE.B  #14, D0
-000016FE  4E4F                     668          TRAP    #15
-00001700  4EB9 00001750            669          JSR     Memory_Alterable_Check
-00001706  6000 0078                670          BRA     Sub_OPMODE_SECOND
-0000170A                           671  OPMODE110
-0000170A  1A00                     672          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
-0000170C  43F9 00001D90            673          LEA     SIZE_LONG, A1
-00001712  103C 000E                674          MOVE.B  #14, D0
-00001716  4E4F                     675          TRAP    #15
-00001718  4EB9 00001750            676          JSR     Memory_Alterable_Check
-0000171E  6000 0060                677          BRA     Sub_OPMODE_SECOND
-00001722                           678  OPMODE111:
-00001722  0C38 000D 1206           679          CMP.B   #%1101, OpCode
-00001728  6700 0008                680          BEQ     Special_OPMODE_USED2
-0000172C  4EF9 00001C18            681          JMP     PRINTINVALIDEA
-00001732                           682  Special_OPMODE_USED2:
-00001732  1A00                     683          MOVE.B  D0, D5
-00001734  43F9 00001DAD            684          LEA     MOVEA, A1
-0000173A  103C 000E                685          MOVE.B  #14, D0
-0000173E  4E4F                     686          TRAP    #15
-00001740  43F9 00001D90            687          LEA     SIZE_LONG, A1
-00001746  103C 000E                688          MOVE.B  #14, D0
-0000174A  4E4F                     689          TRAP    #15
-0000174C  6000 0058                690          BRA     Sub_OPMODE_ADDA
-00001750                           691  *===================================================
-00001750                           692  * USED FOR SUB AND OR, check if dest EA is memory Alterable
-00001750                           693  
-00001750                           694  Memory_Alterable_Check:
-00001750  B23C 0000                695          CMP.B   #%000, D1
-00001754  6700 04C2                696          BEQ     PRINTINVALIDEA
-00001758  B23C 0001                697          CMP.B   #%001, D1
-0000175C  6700 04BA                698          BEQ     PRINTINVALIDEA
-00001760  4E75                     699          RTS
-00001762                           700          
-00001762                           701  *===============================================
-00001762                           702  * Used for Dn->EA for SUB
-00001762                           703  * Called by 001, 010, 100, 
-00001762                           704  Sub_OPMODE_FIRST:
-00001762  1005                     705          MOVE.B  D5, D0   * TEMP RETURN D0
-00001764  4EB9 00001818            706          JSR     EACHECKER 
-0000176A  4280                     707          CLR.L     D0
-0000176C  4281                     708          CLR.L     D1
-0000176E  4EB9 00001C0A            709          JSR     PRINTCOMMA
-00001774  1003                     710          MOVE.B  D3, D0
-00001776  4EB9 0000184E            711          JSR     DestEAChecker 
-0000177C  6000 F974                712          BRA     addrloop *EA FINISHED---------------------------------------------------------------------------------------------------------------------------
-00001780                           713  *===============================================
-00001780                           714  * Used for Dn->EA for SUB
-00001780                           715  * Called by 100, 101, 110 
-00001780                           716  Sub_OPMODE_SECOND:
-00001780  1801                     717          MOVE.B  D1, D4   *TEMP STORE D1
-00001782  4280                     718          CLR.L     D0  *Clean D0
-00001784  1003                     719          MOVE.B  D3, D0
-00001786  4281                     720          CLR.L     D1
-00001788  4EB9 00001818            721          JSR     EACHECKER yeah
-0000178E  4280                     722          CLR.L     D0
-00001790  4281                     723          CLR.L     D1
-00001792  4EB9 00001C0A            724          JSR     PRINTCOMMA
-00001798  1005                     725          MOVE.B  D5, D0   * TEMP RETURN D0
-0000179A  1204                     726          MOVE.B  D4, D1   * TEMP RETURN D1
-0000179C  4EB9 0000184E            727          JSR     DestEAChecker 
-000017A2  6000 F94E                728          BRA     addrloop *EA FINISHED-----
-000017A6                           729  *===============================================
-000017A6                           730  * Used for Dn->EA for SUB
-000017A6                           731  * Called by 011, 111
-000017A6                           732  Sub_OPMODE_ADDA:
-000017A6  1005                     733          MOVE.B  D5, D0   * TEMP RETURN D0
-000017A8  4EB9 00001818            734          JSR     EACHECKER 
-000017AE  4240                     735          CLR     D0
-000017B0  4241                     736          CLR     D1
-000017B2  4EB9 00001C0A            737          JSR     PRINTCOMMA
-000017B8  1003                     738          MOVE.B  D3, D0
-000017BA  123C 0001                739          MOVE.B  #%001, D1
-000017BE  4EB9 0000184E            740          JSR     DestEAChecker 
-000017C4  6000 F92C                741          BRA     addrloop *EA FINISHED---------------------------------------------------------------------------------------------------------------------------
-000017C8                           742          
-000017C8                           743  * CHECK FOR MOVEA BC it has the same OPCODE as MOVE
-000017C8                           744  CHECK_MOVEA
-000017C8  2602                     745          MOVE.L  D2, D3  * HOlding D2 in D3 temp
-000017CA  E18A                     746          LSL.L   #8, D2 // Remove first 20 bits to get opperand
-000017CC  E18A                     747          LSL.L   #8, D2
-000017CE  E98A                     748          LSL.L   #4, D2
-000017D0  E08A                     749          LSR.L   #8, D2
-000017D2  E08A                     750          LSR.L   #8, D2
-000017D4  E88A                     751          LSR.L   #4, D2 // 12 bits of opperand found
-000017D6  EC8A                     752          LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
-000017D8  1202                     753          MOVE.B  D2, D1 * Prepare D1 for Mode
-000017DA  EB09                     754          LSL.B   #5, D1  * Shift 5 bits to get rid of Register and size
-000017DC  EA09                     755          LSR.B   #5, D1
-000017DE  B23C 0001                756          CMP.B   #%001, D1
-000017E2  6700 0006                757          BEQ     PRINTA
-000017E6  2403                     758          MOVE.L  D3, D2 
-000017E8  4E75                     759          RTS * Goes back to OP Value
-000017EA                           760          
-000017EA                           761  PRINTA
-000017EA  43F9 00001DAD            762          LEA     MOVEA, A1
-000017F0  103C 000E                763          MOVE.B  #14, D0
-000017F4  4E4F                     764          TRAP    #15
-000017F6  2403                     765          MOVE.L  D3, D2
-000017F8  4E75                     766          RTS * Goes back to CHECK_MOVEA
-000017FA                           767          
-000017FA                           768          
-000017FA                           769  * EA STARTS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-000017FA                           770  *=================================================================
-000017FA                           771  *-----------EA-- Calculate EA used for Data Registers
-000017FA                           772  *----------Pre: D2, D0, D1 must be clear
-000017FA                           773  *----------POST: prints out EA, D0 will store Data Register #, D1 will store EA MODE
-000017FA                           774  EA:
-000017FA  4280                     775          CLR.L     D0  * Clear D0 and D1 so they don't conflict
-000017FC  4281                     776          CLR.L     D1
-000017FE  4283                     777          CLR.L     D3
-00001800  E18A                     778          LSL.L   #8, D2 // Remove first 20 bits to get opperand
-00001802  E18A                     779          LSL.L   #8, D2
-00001804  E98A                     780          LSL.L   #4, D2
-00001806  E08A                     781          LSR.L   #8, D2
-00001808  E08A                     782          LSR.L   #8, D2
-0000180A  E88A                     783          LSR.L   #4, D2 // 12 bits of opperand found
-0000180C  1002                     784          MOVE.B  D2, D0 Source Data Register
-0000180E  EB08                     785          LSL.B   #5, D0
-00001810  EA08                     786          LSR.B   #5, D0
-00001812  1202                     787          MOVE.B  D2, D1 *Source Data Mode
-00001814  E509                     788          LSL.B   #2, D1
-00001816  EA09                     789          LSR.B   #5, D1
-00001818                           790          
-00001818                           791  *=================================================
-00001818                           792  *-----------EA CHECKER------Continues from EA
-00001818                           793  *-----------Pre: D1 must contain the Mode of EA, D0 must store register# of EA        
-00001818                           794  * TODO: ERROR CHECKING, OTHER MODES other than D0, USE 4 HEX FOR COMPARISON
-00001818                           795  EACHECKER: 
-00001818  B23C 0000                796          CMP.B   #%0000, D1
-0000181C  6700 007E                797          BEQ     JMPTOSRCREG *JUMPS TO Source D registers
-00001820  B23C 0001                798          CMP.B   #%0001, D1
-00001824  6700 0096                799          BEQ     JMPTO_SRC_ADDR_REG
-00001828  B23C 0002                800          CMP.B   #%0010, D1
-0000182C  6700 00AE                801          BEQ     JMPTO_SRC_INDR_ADDR_REG
-00001830  B23C 0003                802          CMP.B   #%0011, D1
-00001834  6700 00A6                803          BEQ     JMPTO_SRC_INDR_ADDR_REG
-00001838  B23C 0004                804          CMP.B   #%0100, D1
-0000183C  6700 009E                805          BEQ     JMPTO_SRC_INDR_ADDR_REG
-00001840  B23C 0007                806          CMP.B   #%0111, D1
-00001844  6700 0196                807          BEQ     JMPTO_SRC_IMMEDIATE
-00001848  4EF9 00001C18            808          JMP     PRINTINVALIDEA
-0000184E                           809          
-0000184E                           810  *=================================================
-0000184E                           811  *-----------DEST EA CHECKER------Continues from EA
-0000184E                           812  *-----------Pre: D1 must contain the Mode of EA, D0 must store register# of EA        
-0000184E                           813  * TODO: ERROR CHECKING, OTHER MODES other than D0, USE 4 HEX FOR COMPARISON        
-0000184E                           814  DESTEACHECKER:
-0000184E  B23C 0000                815          CMP.B   #%0000, D1
-00001852  6700 0058                816          BEQ     JMPTODestREG *JUMPS TO Source D registers
-00001856  B23C 0001                817          CMP.B   #%0001, D1
-0000185A  6700 0070                818          BEQ     JMPTO_DEST_ADDR_REG
-0000185E  B23C 0002                819          CMP.B   #%0010, D1
-00001862  6700 00B4                820          BEQ     JMPTO_DEST_INDR_ADDR_REG
-00001866  B23C 0003                821          CMP.B   #%0011, D1
-0000186A  6700 00AC                822          BEQ     JMPTO_DEST_INDR_ADDR_REG
-0000186E  B23C 0004                823          CMP.B   #%0100, D1
-00001872  6700 00A4                824          BEQ     JMPTO_DEST_INDR_ADDR_REG
-00001876  4EF9 00001C18            825          JMP     PRINTINVALIDEA
-0000187C                           826          
-0000187C                           827  *=================================================      
-0000187C                           828  * Dest EA Finder
-0000187C                           829  * PRE: ONLY USED FOR MOVE
-0000187C                           830  * POST: PRINTS DEST EA  
-0000187C                           831  DestEAFinder:
-0000187C  4EB9 00001C0A            832          JSR     PRINTCOMMA  * Prints comma between two operrands
-00001882  EC8A                     833          LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
-00001884  4241                     834          CLR     D1     * Clear D1 and D0 for opperand mode and register
-00001886  4240                     835          CLR     D0
-00001888  1202                     836          MOVE.B  D2, D1 * Prepare D1 for Mode
-0000188A  EB09                     837          LSL.B   #5, D1  * Shift 5 bits to get rid of Register and size
-0000188C  EA09                     838          LSR.B   #5, D1
-0000188E  1002                     839          MOVE.B  D2, D0  *Prepare D0 for Register
-00001890  E508                     840          LSL.B   #2, D0
-00001892  EA08                     841          LSR.B   #5, D0
-00001894  4EB8 184E                842          JSR     DESTEACHECKER
-00001898  4EF8 10F2                843          JMP     AddrLoop     ****Remember to send this back to next step loop&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-0000189C                           844  
-0000189C                           845          
-0000189C                           846  *===================================================
-0000189C                           847  *-------------Data Register checker------------------        
-0000189C                           848  JMPTOSRCREG:
-0000189C  43F9 00001ABE            849          LEA     DATAREGTABLE, A1
-000018A2  C0FC 0006                850          MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
-000018A6  4EB1 0000                851          JSR     (A1, D0) *JMP To index A1 + D0
-000018AA                           852          * EA CONTINUES HERE
-000018AA  4E75                     853          RTS * BRA DESTEAFINDER DELETED
-000018AC                           854  JMPToDestReg: *PRINT OUT DEST Registers
-000018AC  43F9 00001ABE            855          LEA     DATAREGTABLE, A1
-000018B2  C0FC 0006                856          MULU    #6, D0 * Multiply by 6 bc Each index between jmp table diff is 6
-000018B6  4EB1 0000                857          JSR     (A1, D0) *JMP to A1 + D0
-000018BA  4E75                     858          RTS    * Goes Back to DestEAFinder
-000018BC                           859          
-000018BC                           860  
-000018BC                           861  *===================================================
-000018BC                           862  *-------------Address Register checker------------------             
-000018BC                           863  JMPTO_SRC_ADDR_REG:
-000018BC  43F9 00001AEE            864          LEA     AddrREGTABLE, A1
-000018C2  C0FC 0006                865          MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
-000018C6  4EB1 0000                866          JSR     (A1, D0) *JMP To index A1 + D0
-000018CA                           867          * EA CONTINUES HERE
-000018CA  4E75                     868          RTS * BRA DESTEAFINDER DELETED
-000018CC                           869  JMPTo_Dest_ADDR_Reg: *PRINT OUT DEST Registers
-000018CC  43F9 00001AEE            870          LEA     AddrREGTABLE, A1
-000018D2  C0FC 0006                871          MULU    #6, D0 * Multiply by 6 bc Each index between jmp table diff is 6
-000018D6  4EB1 0000                872          JSR     (A1, D0) *JMP to A1 + D0
-000018DA  4E75                     873          RTS     * Goes Back to DESTEAFinder
-000018DC                           874          
-000018DC                           875  *===================================================
-000018DC                           876  *-------------Indirect Address Register checker------------------
-000018DC                           877  *Copied from Address Register checker, basically adding parenthesis () around Address register
-000018DC                           878  * Also Detects ()+ and -()
-000018DC                           879  * PRE: D1 stores mode, D0 stores register #
-000018DC                           880  * D1 to D5 are off limits
-000018DC                           881  JMPTO_SRC_INDR_ADDR_REG:
-000018DC  1A00                     882         MOVE.B   D0, D5  *TEMP storage for D0 because it will be used by PRINT
-000018DE  B23C 0004                883         CMP.B    #%100, D1       * IF IT IS -()
-000018E2  6700 007E                884         BEQ      PRE_DECREMENT_SRC
-000018E6  43F9 00001DE6            885         LEA      INDR_LEFT, A1
-000018EC  103C 000E                886         MOVE.B   #14, D0
-000018F0  4E4F                     887         TRAP     #15
-000018F2  1005                     888         MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
-000018F4  43F9 00001AEE            889         LEA     AddrREGTABLE, A1
-000018FA  C0FC 0006                890         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
-000018FE  4EB1 0000                891         JSR     (A1, D0) *JMP To index A1 + D0
-00001902  43F9 00001DE8            892         LEA      INDR_RIGHT, A1
-00001908  103C 000E                893         MOVE.B   #14, D0
-0000190C  4E4F                     894         TRAP     #15
-0000190E  B23C 0003                895         CMP.B    #%0011, D1 * IF IT IS ()+
-00001912  6700 0040                896         BEQ      POST_INCREMENT_SRC
-00001916  4E75                     897         RTS * BRA DESTEAFINDER DELETED
-00001918                           898         
-00001918                           899  JMPTO_DEST_INDR_ADDR_REG:
-00001918  1A00                     900         MOVE.B   D0, D5  *TEMP storage for D0 because it will be used by PRINT
-0000191A  B23C 0004                901         CMP.B    #%100, D1
-0000191E  6700 0086                902         BEQ      PRE_DECREMENT_DEST * IF IT IS -()
-00001922  43F9 00001DE6            903         LEA      INDR_LEFT, A1
-00001928  103C 000E                904         MOVE.B   #14, D0
-0000192C  4E4F                     905         TRAP     #15
-0000192E  1003                     906         MOVE.B   D3, D0   *TEMP storage for D0 because it will be used by PRINT
-00001930  43F9 00001AEE            907         LEA     AddrREGTABLE, A1
-00001936  C0FC 0006                908         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
-0000193A  4EB1 0000                909         JSR     (A1, D0) *JMP To index A1 + D0
-0000193E  43F9 00001DE8            910         LEA      INDR_RIGHT, A1
-00001944  103C 000E                911         MOVE.B   #14, D0
-00001948  4E4F                     912         TRAP     #15
-0000194A  B23C 0003                913         CMP.B    #%0011, D1  // IF IT IS ()+
-0000194E  6700 0048                914         BEQ      POST_INCREMENT_DEST
-00001952  4E75                     915         RTS      * Goes Back to DestEAFinder
-00001954                           916         
-00001954                           917  POST_INCREMENT_SRC:
-00001954  43F9 00001DEA            918         LEA      POST_INCRE, A1
-0000195A  103C 000E                919         MOVE.B   #14, D0
-0000195E  4E4F                     920         TRAP     #15
-00001960  4E75                     921         RTS * BRA DESTEAFINDER DELETED
-00001962                           922         
-00001962                           923  PRE_DECREMENT_SRC:
-00001962  43F9 00001DEC            924         LEA      PRE_DECRE, A1
-00001968  103C 000E                925         MOVE.B   #14, D0
-0000196C  4E4F                     926         TRAP     #15
-0000196E  43F9 00001DE6            927         LEA      INDR_LEFT, A1
-00001974  103C 000E                928         MOVE.B   #14, D0
-00001978  4E4F                     929         TRAP     #15
-0000197A  1005                     930         MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
-0000197C  43F9 00001AEE            931         LEA     AddrREGTABLE, A1
-00001982  C0FC 0006                932         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
-00001986  4EB1 0000                933         JSR     (A1, D0) *JMP To index A1 + D0
-0000198A  43F9 00001DE8            934         LEA      INDR_RIGHT, A1
-00001990  103C 000E                935         MOVE.B   #14, D0
-00001994  4E4F                     936         TRAP     #15
-00001996  4E75                     937         RTS * BRA DESTEAFINDER DELETED
-00001998                           938  
-00001998                           939  POST_INCREMENT_DEST
-00001998  43F9 00001DEA            940         LEA      POST_INCRE, A1
-0000199E  103C 000E                941         MOVE.B   #14, D0
-000019A2  4E4F                     942         TRAP     #15
-000019A4  4E75                     943         RTS      * Goes Back to DestEAFinder
-000019A6                           944         
-000019A6                           945  PRE_DECREMENT_DEST:
-000019A6  43F9 00001DEC            946         LEA      PRE_DECRE, A1
-000019AC  103C 000E                947         MOVE.B   #14, D0
-000019B0  4E4F                     948         TRAP     #15
-000019B2  43F9 00001DE6            949         LEA      INDR_LEFT, A1
-000019B8  103C 000E                950         MOVE.B   #14, D0
-000019BC  4E4F                     951         TRAP     #15
-000019BE  1005                     952         MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
-000019C0  43F9 00001AEE            953         LEA     AddrREGTABLE, A1
-000019C6  C0FC 0006                954         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
-000019CA  4EB1 0000                955         JSR     (A1, D0) *JMP To index A1 + D0
-000019CE  43F9 00001DE8            956         LEA      INDR_RIGHT, A1
-000019D4  103C 000E                957         MOVE.B   #14, D0
-000019D8  4E4F                     958         TRAP     #15
-000019DA  4E75                     959         RTS      * Goes Back to DestEAFinder
-000019DC                           960         
-000019DC                           961  JMPTO_SRC_IMMEDIATE:
-000019DC  B03C 0000                962         CMP.B    #%000, D0
-000019E0  6700 002E                963         BEQ      Address_W
-000019E4  B03C 0001                964         CMP.B    #%001, D0
-000019E8  6700 0044                965         BEQ      Address_L
-000019EC  B03C 0004                966         CMP.B    #%100, D0
-000019F0  6700 005A                967         BEQ      Address_Immediate
-000019F4  4EF9 00001C18            968         JMP      PRINTINVALIDEA
-000019FA                           969  *===================================  
-000019FA                           970  * Same as SRC but without Immediate address     
-000019FA                           971  JMPTO_DEST_IMMEDIATE:
-000019FA  B03C 0000                972         CMP.B    #%000, D0
-000019FE  6700 0010                973         BEQ      Address_W
-00001A02  B03C 0001                974         CMP.B    #%001, D0
-00001A06  6700 0026                975         BEQ      Address_L
-00001A0A  4EF9 00001C18            976         JMP      PRINTINVALIDEA
-00001A10                           977         
-00001A10                           978  Address_W:
-00001A10  43F9 00001DEE            979          LEA     DOLLAR_SIGN, A1
-00001A16  103C 000E                980          MOVE.B  #14, D0
-00001A1A  4E4F                     981          TRAP    #15
-00001A1C  4241                     982          CLR     D1
-00001A1E  4240                     983          CLR     D0
-00001A20  321E                     984          MOVE.W  (A6)+, D1
-00001A22  143C 0010                985          MOVE.B  #16, D2
-00001A26  103C 000F                986          MOVE.B  #15, D0
-00001A2A  4E4F                     987          TRAP    #15 
-00001A2C  4E75                     988          RTS 
-00001A2E                           989  
-00001A2E                           990  Address_L
-00001A2E  43F9 00001DEE            991          LEA     DOLLAR_SIGN, A1
-00001A34  103C 000E                992          MOVE.B  #14, D0
-00001A38  4E4F                     993          TRAP    #15
-00001A3A  4241                     994          CLR     D1
-00001A3C  4240                     995          CLR     D0
-00001A3E  221E                     996          MOVE.L  (A6)+, D1
-00001A40  143C 0010                997          MOVE.B  #16, D2
-00001A44  103C 000F                998          MOVE.B  #15, D0
-00001A48  4E4F                     999          TRAP    #15
-00001A4A  4E75                    1000          RTS  
-00001A4C                          1001          
-00001A4C                          1002  Address_Immediate:
-00001A4C  43F9 00001DF0           1003          LEA     POUND_SIGN, A1
-00001A52  103C 000E               1004          MOVE.B  #14, D0
-00001A56  4E4F                    1005          TRAP    #15
-00001A58  43F9 00001DEE           1006          LEA     DOLLAR_SIGN, A1
-00001A5E  103C 000E               1007          MOVE.B  #14, D0
-00001A62  4E4F                    1008          TRAP    #15
-00001A64  0C39 0001 00001E1E      1009          CMP.B   #%01, OpCodeSize *01 is used to mark invalid immediate for example ROR, ROL
-00001A6C  6700 01AA               1010          BEQ     PRINTINVALIDEA
-00001A70  0C39 0000 00001E1E      1011          CMP.B   #%00, OpCodeSize
-00001A78  6700 001A               1012          BEQ     Immediate_B
-00001A7C  0C39 0003 00001E1E      1013          CMP.B   #%11, OpCodeSize
-00001A84  6700 001C               1014          BEQ     Immediate_W
-00001A88  0C39 0002 00001E1E      1015          CMP.B   #%10, OpCOdeSize
-00001A90  6700 001E               1016          BEQ     Immediate_L
-00001A94                          1017          
-00001A94                          1018  Immediate_B:
-00001A94  121E                    1019          MOVE.B  (A6)+, D1
-00001A96  143C 0010               1020          MOVE.B  #16, D2
-00001A9A  103C 000F               1021          MOVE.B  #15, D0
-00001A9E  4E4F                    1022          TRAP    #15
-00001AA0  4E75                    1023          RTS
-00001AA2                          1024          
-00001AA2                          1025  Immediate_W:
-00001AA2  321E                    1026          MOVE.W  (A6)+, D1
-00001AA4  143C 0010               1027          MOVE.B  #16, D2
-00001AA8  103C 000F               1028          MOVE.B  #15, D0
-00001AAC  4E4F                    1029          TRAP    #15
-00001AAE  4E75                    1030          RTS
-00001AB0                          1031          
-00001AB0                          1032  Immediate_L:
-00001AB0  221E                    1033          MOVE.L  (A6)+, D1
-00001AB2  143C 0010               1034          MOVE.B  #16, D2
-00001AB6  103C 000F               1035          MOVE.B  #15, D0
-00001ABA  4E4F                    1036          TRAP    #15
-00001ABC  4E75                    1037          RTS
-00001ABE                          1038  
-00001ABE                          1039          
-00001ABE                          1040  
-00001ABE                          1041  *=================================================================
-00001ABE                          1042  *---------Data Register Table used for printing out Registers----
-00001ABE                          1043  *----------Starts from index and use JRS (x,y) to jump to certain index, multiply by #6
-00001ABE                          1044  DataRegTable
-00001ABE  4EF9 00001B1E           1045          JMP REG_D0
-00001AC4  4EF9 00001B32           1046          JMP REG_D1
-00001ACA  4EF9 00001B40           1047          JMP REG_D2
-00001AD0  4EF9 00001B4E           1048          JMP REG_D3
-00001AD6  4EF9 00001B5C           1049          JMP REG_D4
-00001ADC  4EF9 00001B6A           1050          JMP REG_D5
-00001AE2  4EF9 00001B78           1051          JMP REG_D6
-00001AE8  4EF9 00001B86           1052          JMP REG_D7
-00001AEE                          1053  
-00001AEE                          1054  AddrRegTable:
-00001AEE                          1055          
-00001AEE  4EF9 00001B94           1056          JMP REG_A0
-00001AF4  4EF9 00001BA8           1057          JMP REG_A1
-00001AFA  4EF9 00001BB6           1058          JMP REG_A2
-00001B00  4EF9 00001BC4           1059          JMP REG_A3
-00001B06  4EF9 00001BD2           1060          JMP REG_A4
-00001B0C  4EF9 00001BE0           1061          JMP REG_A5
-00001B12  4EF9 00001BEE           1062          JMP REG_A6
-00001B18  4EF9 00001BFC           1063          JMP REG_A7
-00001B1E                          1064  
-00001B1E                          1065  * Data Registers Printing        
-00001B1E                          1066  REG_D0:
-00001B1E  227C 00000000           1067          MOVEA.L #$0, A1
-00001B24  43F9 00001DB6           1068          LEA     DREG0, A1
-00001B2A  103C 000E               1069          MOVE.B  #14, D0
-00001B2E  4E4F                    1070          TRAP    #15
-00001B30  4E75                    1071          RTS
-00001B32                          1072          
-00001B32                          1073  REG_D1:
-00001B32  43F9 00001DB9           1074          LEA     DREG1, A1
-00001B38  103C 000E               1075          MOVE.B  #14, D0
-00001B3C  4E4F                    1076          TRAP    #15
-00001B3E  4E75                    1077          RTS
-00001B40                          1078  REG_D2:
-00001B40  43F9 00001DBC           1079          LEA     DREG2, A1
-00001B46  103C 000E               1080          MOVE.B  #14, D0
-00001B4A  4E4F                    1081          TRAP    #15
-00001B4C  4E75                    1082          RTS
-00001B4E                          1083  REG_D3:
-00001B4E  43F9 00001DBF           1084          LEA     DREG3, A1
-00001B54  103C 000E               1085          MOVE.B  #14, D0
-00001B58  4E4F                    1086          TRAP    #15
-00001B5A  4E75                    1087          RTS
-00001B5C                          1088  REG_D4:
-00001B5C  43F9 00001DC2           1089          LEA     DREG4, A1
-00001B62  103C 000E               1090          MOVE.B  #14, D0
-00001B66  4E4F                    1091          TRAP    #15
-00001B68  4E75                    1092          RTS
-00001B6A                          1093  REG_D5:
-00001B6A  43F9 00001DC5           1094          LEA     DREG5, A1
-00001B70  103C 000E               1095          MOVE.B  #14, D0
-00001B74  4E4F                    1096          TRAP    #15
-00001B76  4E75                    1097          RTS
-00001B78                          1098  REG_D6:
-00001B78  43F9 00001DC8           1099          LEA     DREG6, A1
-00001B7E  103C 000E               1100          MOVE.B  #14, D0
-00001B82  4E4F                    1101          TRAP    #15
-00001B84  4E75                    1102          RTS
-00001B86                          1103  REG_D7:
-00001B86  43F9 00001DCB           1104          LEA     DREG7, A1
-00001B8C  103C 000E               1105          MOVE.B  #14, D0
-00001B90  4E4F                    1106          TRAP    #15
-00001B92  4E75                    1107          RTS
-00001B94                          1108          
-00001B94                          1109  *--------------------Addr Reigster printing ------------------------*        
-00001B94                          1110  REG_A0:
-00001B94  227C 00000000           1111          MOVEA.L #$0, A1
-00001B9A  43F9 00001DCE           1112          LEA     AREG0, A1
-00001BA0  103C 000E               1113          MOVE.B  #14, D0
-00001BA4  4E4F                    1114          TRAP    #15
-00001BA6  4E75                    1115          RTS
-00001BA8                          1116          
-00001BA8                          1117  REG_A1:
-00001BA8  43F9 00001DD1           1118          LEA     AREG1, A1
-00001BAE  103C 000E               1119          MOVE.B  #14, D0
-00001BB2  4E4F                    1120          TRAP    #15
-00001BB4  4E75                    1121          RTS
-00001BB6                          1122  REG_A2:
-00001BB6  43F9 00001DD4           1123          LEA     AREG2, A1
-00001BBC  103C 000E               1124          MOVE.B  #14, D0
-00001BC0  4E4F                    1125          TRAP    #15
-00001BC2  4E75                    1126          RTS
-00001BC4                          1127  REG_A3:
-00001BC4  43F9 00001DD7           1128          LEA     AREG3, A1
-00001BCA  103C 000E               1129          MOVE.B  #14, D0
-00001BCE  4E4F                    1130          TRAP    #15
-00001BD0  4E75                    1131          RTS
-00001BD2                          1132  REG_A4:
-00001BD2  43F9 00001DDA           1133          LEA     AREG4, A1
-00001BD8  103C 000E               1134          MOVE.B  #14, D0
-00001BDC  4E4F                    1135          TRAP    #15
-00001BDE  4E75                    1136          RTS
-00001BE0                          1137  REG_A5:
-00001BE0  43F9 00001DDD           1138          LEA     AREG5, A1
-00001BE6  103C 000E               1139          MOVE.B  #14, D0
-00001BEA  4E4F                    1140          TRAP    #15
-00001BEC  4E75                    1141          RTS
-00001BEE                          1142  REG_A6:
-00001BEE  43F9 00001DE0           1143          LEA     AREG6, A1
-00001BF4  103C 000E               1144          MOVE.B  #14, D0
-00001BF8  4E4F                    1145          TRAP    #15
-00001BFA  4E75                    1146          RTS
-00001BFC                          1147  REG_A7:
-00001BFC  43F9 00001DE3           1148          LEA     AREG7, A1
-00001C02  103C 000E               1149          MOVE.B  #14, D0
-00001C06  4E4F                    1150          TRAP    #15
-00001C08  4E75                    1151          RTS
-00001C0A                          1152          
-00001C0A                          1153  *====================================================PRinting/ ERROR method comes down here=========================================
-00001C0A                          1154  PRINTCOMMA: * Prints comma between two operrands
-00001C0A  43F9 00001D81           1155          LEA     COMMA, A1
-00001C10  103C 000E               1156          MOVE.B  #14, D0
-00001C14  4E4F                    1157          TRAP    #15
-00001C16  4E75                    1158          RTS
-00001C18                          1159          
-00001C18                          1160  PrintInvalidEA:
-00001C18  43F9 00001CDE           1161          LEA     Invalid_EA_Addr, A1
-00001C1E  103C 000E               1162          MOVE.B  #14, D0
-00001C22  4E4F                    1163          TRAP    #15
-00001C24  4EF8 10F2               1164          JMP     AddrLoop
-00001C28                          1165          
-00001C28                          1166  PrintInvalidSUB:
-00001C28  43F9 00001CF4           1167          LEA     Invalid_EA_SUB, A1
-00001C2E  103C 000E               1168          MOVE.B  #14, D0
-00001C32  4E4F                    1169          TRAP    #15
-00001C34  4EF8 10F2               1170          JMP     AddrLoop
-00001C38                          1171          
-00001C38                          1172  PrintInvalidAddress:
-00001C38  43F9 00001D12           1173          LEA     Invalid_Address, A1
-00001C3E  103C 000E               1174          MOVE.B  #14, D0
-00001C42  4E4F                    1175          TRAP    #15
-00001C44  4EF8 1006               1176          JMP     GETINPUT
-00001C48                          1177          
-00001C48                          1178  PrintDATA:
-00001C48  43F9 00001DAF           1179          LEA     DATA, A1
-00001C4E  103C 000E               1180          MOVE.B  #14, D0
-00001C52  4E4F                    1181          TRAP    #15
-00001C54  3202                    1182          MOVE.W  D2, D1
-00001C56  143C 0010               1183          MOVE.B  #16, D2
-00001C5A  103C 000F               1184          MOVE.B  #15, D0
-00001C5E  4E4F                    1185          TRAP    #15
-00001C60  6000 F490               1186          BRA     AddrLoop
-00001C64                          1187           
-00001C64                          1188  * Clear all registers    
-00001C64                          1189  CLRREG:
-00001C64  7000                    1190      MOVE.L  #0, D0
-00001C66  7200                    1191      MOVE.L  #0, D1
-00001C68  7400                    1192      MOVE.L  #0, D2
-00001C6A  7600                    1193      MOVE.L  #0, D3
-00001C6C  7800                    1194      MOVE.L  #0, D4
-00001C6E  7A00                    1195      MOVE.L  #0, D5
-00001C70  7C00                    1196      MOVE.L  #0, D6
-00001C72  7E00                    1197      MOVE.L  #0, D7
-00001C74  4E75                    1198      RTS
-00001C76                          1199      
-00001C76                          1200  CLRAREG:
-00001C76  207C 00000000           1201      MOVE.L  #0, A0
-00001C7C  227C 00000000           1202      MOVE.L  #0, A1
-00001C82  247C 00000000           1203      MOVE.L  #0, A2
-00001C88  267C 00000000           1204      MOVE.L  #0, A3
-00001C8E  287C 00000000           1205      MOVE.L  #0, A4
-00001C94  2A7C 00000000           1206      MOVE.L  #0, A5
-00001C9A  4E75                    1207      RTS
-00001C9C                          1208  
-00001C9C                          1209      
-00001C9C                          1210      
-00001C9C                          1211          
-00001C9C                          1212  * Put program code here
-00001C9C                          1213  
-00001C9C  FFFF FFFF               1214      SIMHALT             ; halt simulator
-00001CA0                          1215  
-00001CA0                          1216  * Put variables and constants here
-00001CA0  =0000000D               1217  CR  EQU $0D
-00001CA0  =0000000A               1218  LF  EQU $0A
-00001CA0= 50 6C 65 61 73 65 ...   1219  WELCOME     DC.B    'Please enter starting address', CR, LF, 0
-00001CC0= 50 6C 65 61 73 65 ...   1220  WELCOME2    DC.B    'Please enter ending address', CR, LF, 0
-00001CDE= 49 6E 76 61 6C 69 ...   1221  Invalid_EA_ADDR DC.B   'Invalid EA detected', CR, LF, 0
-00001CF4= 49 6E 76 61 6C 69 ...   1222  INVALID_EA_SUB  DC.B    'Invalid SUB OPMODE Detected', CR, LF, 0
-00001D12= 47 69 76 65 6E 20 ...   1223  Invalid_Address DC.B    'Given address is Invalid', CR, LF, 0
-00001D2D= 43 6F 6E 74 69 6E ...   1224  Continue_Program    DC.B    'Continue Program? Y/N', CR, LF, 0
-00001D45= 43 6F 6E 74 69 6E ...   1225  Continue_Screen DC.B    'Continue Screen? Y/N', CR, LF, 0
-00001D5C= 0D 0A 00                1226  Print_NextLine  DC.B    '', CR, LF, 0
-00001D5F= 54 68 61 6E 6B 20 ...   1227  TY_Message  DC.B    'Thank you for using our program', CR, LF, 0
-00001D81                          1228  
-00001D81= 2C 20 00                1229  COMMA       DC.B    ', ', 0
-00001D84= 20 20 20 00             1230  SPACER      DC.B    '   ', 0
-00001D88                          1231  *DATASIZE
-00001D88= 2E 42 20 00             1232  SIZE_BYTE       DC.B    '.B ', 0
-00001D8C= 2E 57 20 00             1233  SIZE_WORD       DC.B    '.W ', 0
-00001D90= 2E 4C 20 00             1234  SIZE_LONG       DC.B    '.L ', 0
-00001D94                          1235  
-00001D94                          1236  *MOVE OPCODES
-00001D94= 4D 4F 56 45 00          1237  MOVE_PRINT  DC.B    'MOVE', 0
-00001D99= 4D 4F 56 45 2E 42 ...   1238  MOVEB       DC.B    'MOVE.B ', 0
-00001DA1= 2E 42 20 00             1239  SIZE_B       DC.B    '.B ', 0
-00001DA5= 2E 57 20 00             1240  MOVEW       DC.B    '.W ', 0
-00001DA9= 2E 4C 20 00             1241  MOVEL       DC.B    '.L ', 0
-00001DAD= 41 00                   1242  MOVEA       DC.B    'A', 0
-00001DAF= 44 41 54 41 3A 20 00    1243  DATA        DC.B    'DATA: ', 0
-00001DB6                          1244  
-00001DB6                          1245  
-00001DB6                          1246  *DATA REGISTERS PRINTOUT
-00001DB6= 44 30 00                1247  DREG0       DC.B    'D0', 0
-00001DB9= 44 31 00                1248  DREG1       DC.B    'D1', 0
-00001DBC= 44 32 00                1249  DREG2       DC.B    'D2', 0
-00001DBF= 44 33 00                1250  DREG3       DC.B    'D3', 0
-00001DC2= 44 34 00                1251  DREG4       DC.B    'D4', 0
-00001DC5= 44 35 00                1252  DREG5       DC.B    'D5', 0
-00001DC8= 44 36 00                1253  DREG6       DC.B    'D6', 0
-00001DCB= 44 37 00                1254  DREG7       DC.B    'D7', 0 
-00001DCE                          1255  
-00001DCE                          1256  *ADDR REGISTERS PRINTOUT
-00001DCE= 41 30 00                1257  AREG0       DC.B    'A0', 0
-00001DD1= 41 31 00                1258  AREG1       DC.B    'A1', 0
-00001DD4= 41 32 00                1259  AREG2       DC.B    'A2', 0
-00001DD7= 41 33 00                1260  AREG3       DC.B    'A3', 0
-00001DDA= 41 34 00                1261  AREG4       DC.B    'A4', 0
-00001DDD= 41 35 00                1262  AREG5       DC.B    'A5', 0
-00001DE0= 41 36 00                1263  AREG6       DC.B    'A6', 0
-00001DE3= 41 37 00                1264  AREG7       DC.B    'A7', 0 
-00001DE6                          1265  
-00001DE6                          1266  *INDR_ADDR REGISTERS PRINTOUT
-00001DE6= 28 00                   1267  INDR_LEFT   DC.B    '(', 0
-00001DE8= 29 00                   1268  INDR_RIGHT  DC.B    ')', 0
-00001DEA= 2B 00                   1269  POST_INCRE   DC.B    '+', 0
-00001DEC= 2D 00                   1270  PRE_DECRE   DC.B    '-', 0
-00001DEE= 24 00                   1271  DOLLAR_SIGN DC.B    '$', 0
-00001DF0= 23 00                   1272  POUND_SIGN  DC.B    '#', 0
-00001DF2                          1273  
-00001DF2                          1274  *SUB
-00001DF2= 53 55 42 00             1275  SUBTRACT    DC.B    'SUB', 0
-00001DF6= 41 44 44 00             1276  ADDITION    DC.B    'ADD', 0
-00001DFA= 41 4E 44 00             1277  AND         DC.B    'AND', 0
-00001DFE= 4F 52 00                1278  OR          DC.B    'OR', 0
-00001E01= 4E 4F 54 00             1279  NOT_OP      DC.B    'NOT', 0
-00001E05= 52 4F 4C 00             1280  ROL         DC.B    'ROL', 0
-00001E09= 52 4F 52 00             1281  ROR         DC.B    'ROR', 0
-00001E0D                          1282  
-00001E0E= 00000001                1283  addrStart   DC.L    1   // Starting address
-00001E12= 00000001                1284  addrEnd     DC.L    1   // ending address
-00001E16= 00000001                1285  OpCodeStorage DC.L    1
-00001E1A= 00000001                1286  ScreenCounter   DC.L    1
-00001E1E= 00000001                1287  OpCodeSize  DC.L    1
-00001E22                          1288      END    START        ; last line of source
+000013C6  43F9 00001E6C            356          LEA     ADDQ, A1
+000013CC  103C 000E                357          MOVE.B  #14, D0
+000013D0  4E4F                     358          TRAP    #15
+000013D2  E94A                     359          LSL.W   #4, D2
+000013D4  3C02                     360          MOVE.W  D2, D6 *D1 Immediate DATA
+000013D6  E04E                     361          LSR.W   #8, D6
+000013D8  EA4E                     362          LSR.W   #5, D6
+000013DA  3802                     363          MOVE.W  D2, D4 * D4 OPCode Size
+000013DC  E94C                     364          LSL.W   #4, D4
+000013DE  E04C                     365          LSR.W   #8, D4
+000013E0  EC4C                     366          LSR.W   #6, D4
+000013E2  3202                     367          MOVE.W  D2, D1 * D1 EA Mode
+000013E4  ED49                     368          LSL.W   #6, D1
+000013E6  E049                     369          LSR.W   #8, D1
+000013E8  EA49                     370          LSR.W   #5, D1
+000013EA  3A02                     371          MOVE.W  D2, D5 * D5 EA REgister
+000013EC  E14D                     372          LSL.W   #8, D5
+000013EE  E34D                     373          LSL.W   #1, D5
+000013F0  E04D                     374          LSR.W   #8, D5
+000013F2  EA4D                     375          LSR.W   #5, D5
+000013F4                           376          
+000013F4                           377          
+000013F4                           378  ADDQ_Size_TABLE:
+000013F4  B83C 0000                379          CMP.B   #%000, D4
+000013F8  6700 0012                380          BEQ     ADDQ_B
+000013FC  B83C 0001                381          CMP.B   #%001, D4
+00001400  6700 001C                382          BEQ     ADDQ_W
+00001404  B83C 0002                383          CMP.B   #%010, D4
+00001408  6700 002A                384          BEQ     ADDQ_L
+0000140C                           385          
+0000140C                           386  ADDQ_B
+0000140C  43F9 00001E3E            387          LEA     SIZE_BYTE,A1
+00001412  103C 000E                388          MOVE.B  #14, D0
+00001416  4E4F                     389          TRAP    #15
+00001418  4EF9 00001446            390          JMP     ADDQ_Print_immediate
+0000141E                           391          
+0000141E                           392  ADDQ_W
+0000141E  43F9 00001E42            393          LEA     SIZE_WORD,A1
+00001424  103C 000E                394          MOVE.B  #14, D0
+00001428  4E4F                     395          TRAP    #15
+0000142A  B23C 0000                396          CMP.B   #%0, D1
+0000142E  4EF9 00001446            397          JMP     ADDQ_Print_immediate
+00001434                           398  
+00001434                           399  ADDQ_L
+00001434  43F9 00001E46            400          LEA     SIZE_LONG,A1
+0000143A  103C 000E                401          MOVE.B  #14, D0
+0000143E  4E4F                     402          TRAP    #15
+00001440  4EF9 00001446            403          JMP     ADDQ_Print_immediate
+00001446                           404          
+00001446                           405          
+00001446                           406  ADDQ_Print_immediate
+00001446  43F9 00001EAB            407          LEA     POUND_SIGN, A1
+0000144C  103C 000E                408          MOVE.B  #14, D0
+00001450  4E4F                     409          TRAP    #15
+00001452  BC3C 0000                410          CMP.B   #%0000, D6
+00001456  6700 0284                411          BEQ     PRINT8
+0000145A                           412          
+0000145A  103C 000F                413          MOVE.B  #15, D0
+0000145E  4E4F                     414          TRAP    #15
+00001460                           415          
+00001460                           416  ADDQ_Print_ImmediateCONT:
+00001460  4EB9 00001CC0            417          JSR     PRINTCOMMA
+00001466  1005                     418          MOVE.B  D5, D0
+00001468  123C 0000                419          MOVE.B  #%000, D1
+0000146C  4EB9 000018FC            420          JSR     DESTEACHECKER
+00001472  4EF8 10F2                421          JMP     AddrLoop
+00001476                           422  
+00001476                           423  
+00001476                           424         
+00001476                           425          
+00001476                           426  OP0110:
+00001476                           427  OP0111:
+00001476                           428          
+00001476                           429  
+00001476                           430  
+00001476                           431  
+00001476                           432  * -> SUB
+00001476                           433  * Splitting Sub into OPMODE and Register value
+00001476                           434  OP1001:
+00001476  43F9 00001EAD            435          LEA     SUBTRACT, A1
+0000147C  103C 000E                436          MOVE.B  #14, D0
+00001480  4E4F                     437          TRAP    #15
+00001482  E94A                     438          LSL.W   #4, D2
+00001484  3602                     439          MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
+00001486  E04B                     440          LSR.W   #8, D3 * D3 = D register
+00001488  EA4B                     441          LSR.W   #5, D3
+0000148A  3802                     442          MOVE.W  D2, D4 *D4 = SubOPMODE
+0000148C  E74C                     443          LSL.W   #3, D4
+0000148E  E04C                     444          LSR.W   #8, D4
+00001490  EA4C                     445          LSR.W   #5, D4
+00001492  3202                     446          MOVE.W  D2, D1 * D1 = EA Mode
+00001494  ED49                     447          LSL.W   #6, D1
+00001496  E049                     448          LSR.W   #8, D1
+00001498  EA49                     449          LSR.W   #5, D1
+0000149A  3002                     450          MOVE.W  D2, D0 * D0 = EA register
+0000149C  E148                     451          LSL.W   #8, D0
+0000149E  E348                     452          LSL.W   #1, D0
+000014A0  E048                     453          LSR.W   #8, D0
+000014A2  EA48                     454          LSR.W   #5, D0
+000014A4  45F9 000016EC            455          LEA     SubTable, A2
+000014AA  C8FC 0006                456          MULU    #6, D4
+000014AE  4EB2 4000                457          JSR     (A2, D4)
+000014B2                           458  * -> OR
+000014B2                           459  * Splitting AND into OPMODE and Register value       
+000014B2                           460  OP1000:
+000014B2  43F9 00001EB9            461          LEA     OR, A1
+000014B8  103C 000E                462          MOVE.B  #14, D0
+000014BC  4E4F                     463          TRAP    #15
+000014BE  E94A                     464          LSL.W   #4, D2
+000014C0  3602                     465          MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
+000014C2  E04B                     466          LSR.W   #8, D3 * D3 = D register
+000014C4  EA4B                     467          LSR.W   #5, D3
+000014C6  3802                     468          MOVE.W  D2, D4 *D4 = SubOPMODE
+000014C8  E74C                     469          LSL.W   #3, D4
+000014CA  E04C                     470          LSR.W   #8, D4
+000014CC  EA4C                     471          LSR.W   #5, D4
+000014CE  3202                     472          MOVE.W  D2, D1 * D1 = EA Mode
+000014D0  ED49                     473          LSL.W   #6, D1
+000014D2  E049                     474          LSR.W   #8, D1
+000014D4  EA49                     475          LSR.W   #5, D1
+000014D6  B23C 0001                476          CMP.B   #%0001, D1
+000014DA  6700 07F2                477          BEQ     PRINTINVALIDEA
+000014DE  3002                     478          MOVE.W  D2, D0 * D0 = EA register
+000014E0  E148                     479          LSL.W   #8, D0
+000014E2  E348                     480          LSL.W   #1, D0
+000014E4  E048                     481          LSR.W   #8, D0
+000014E6  EA48                     482          LSR.W   #5, D0
+000014E8  45F9 000016EC            483          LEA     SubTable, A2
+000014EE  C8FC 0006                484          MULU    #6, D4
+000014F2  4EB2 4000                485          JSR     (A2, D4)
+000014F6                           486  OP1010
+000014F6                           487  OP1011
+000014F6                           488  * -> AND
+000014F6                           489  * Splitting AND into OPMODE and Register value
+000014F6                           490  OP1100
+000014F6  43F9 00001EB5            491          LEA     AND, A1
+000014FC  103C 000E                492          MOVE.B  #14, D0
+00001500  4E4F                     493          TRAP    #15
+00001502  E94A                     494          LSL.W   #4, D2
+00001504  3602                     495          MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
+00001506  E04B                     496          LSR.W   #8, D3 * D3 = D register
+00001508  EA4B                     497          LSR.W   #5, D3
+0000150A  3802                     498          MOVE.W  D2, D4 *D4 = SubOPMODE
+0000150C  E74C                     499          LSL.W   #3, D4
+0000150E  E04C                     500          LSR.W   #8, D4
+00001510  EA4C                     501          LSR.W   #5, D4
+00001512  3202                     502          MOVE.W  D2, D1 * D1 = EA Mode
+00001514  ED49                     503          LSL.W   #6, D1
+00001516  E049                     504          LSR.W   #8, D1
+00001518  EA49                     505          LSR.W   #5, D1
+0000151A  3002                     506          MOVE.W  D2, D0 * D0 = EA register
+0000151C  E148                     507          LSL.W   #8, D0
+0000151E  E348                     508          LSL.W   #1, D0
+00001520  E048                     509          LSR.W   #8, D0
+00001522  EA48                     510          LSR.W   #5, D0
+00001524  45F9 000016EC            511          LEA     SubTable, A2
+0000152A  C8FC 0006                512          MULU    #6, D4
+0000152E  4EB2 4000                513          JSR     (A2, D4)
+00001532                           514          
+00001532                           515  * -> ADD
+00001532                           516  * Spltting Add into OPMODE and Register Value
+00001532                           517  OP1101:
+00001532  43F9 00001EB1            518          LEA     ADDITION, A1
+00001538  103C 000E                519          MOVE.B  #14, D0
+0000153C  4E4F                     520          TRAP    #15
+0000153E  E94A                     521          LSL.W   #4, D2
+00001540  3602                     522          MOVE.W  D2, D3 *xxx---xxx---0000, D3 contains register #
+00001542  E04B                     523          LSR.W   #8, D3 * D3 = D register
+00001544  EA4B                     524          LSR.W   #5, D3
+00001546  3802                     525          MOVE.W  D2, D4 *D4 = SubOPMODE
+00001548  E74C                     526          LSL.W   #3, D4
+0000154A  E04C                     527          LSR.W   #8, D4
+0000154C  EA4C                     528          LSR.W   #5, D4
+0000154E  3202                     529          MOVE.W  D2, D1 * D1 = EA Mode
+00001550  ED49                     530          LSL.W   #6, D1
+00001552  E049                     531          LSR.W   #8, D1
+00001554  EA49                     532          LSR.W   #5, D1
+00001556  3002                     533          MOVE.W  D2, D0 * D0 = EA register
+00001558  E148                     534          LSL.W   #8, D0
+0000155A  E348                     535          LSL.W   #1, D0
+0000155C  E048                     536          LSR.W   #8, D0
+0000155E  EA48                     537          LSR.W   #5, D0
+00001560  45F9 000016EC            538          LEA     SubTable, A2
+00001566  C8FC 0006                539          MULU    #6, D4
+0000156A  4EB2 4000                540          JSR     (A2, D4)
+0000156E                           541  
+0000156E                           542  *-> ROL, ROR        
+0000156E                           543  OP1110:
+0000156E  E94A                     544          LSL.W   #4, D2
+00001570  3C02                     545          MOVE.W  D2, D6 * Shift size
+00001572  E04E                     546          LSR.W   #8, D6
+00001574  EA4E                     547          LSR.W   #5, D6
+00001576  3602                     548          MOVE.W  D2, D3 * L/R
+00001578  E74B                     549          LSL.W   #3, D3
+0000157A  E04B                     550          LSR.W   #8, D3
+0000157C  EE4B                     551          LSR.W   #7, D3
+0000157E  3802                     552          MOVE.W  D2, D4 * Size field
+00001580  E94C                     553          LSL.W   #4, D4
+00001582  E04C                     554          LSR.W   #8, D4
+00001584  EC4C                     555          LSR.W   #6, D4
+00001586  3202                     556          MOVE.W  D2, D1 *immediate/register
+00001588  ED49                     557          LSL.W   #6, D1
+0000158A  E049                     558          LSR.W   #8, D1
+0000158C  EE49                     559          LSR.W   #7, D1
+0000158E  3A02                     560          MOVE.W  D2, D5 * Shift Register
+00001590  E14D                     561          LSL.W   #8, D5
+00001592  E34D                     562          LSL.W   #1, D5
+00001594  E04D                     563          LSR.W   #8, D5
+00001596  EA4D                     564          LSR.W   #5, D5
+00001598  C6FC 0006                565          MULU    #6, D3
+0000159C  43F9 000015A6            566          LEA     RotateTable, A1
+000015A2  4EB1 3000                567          JSR     (A1, D3)
+000015A6                           568          
+000015A6                           569  RotateTable:
+000015A6  4EF9 000015B2            570          JMP     Rotate_RIGHT
+000015AC  4EF9 000015C4            571          JMP     Rotate_LEFT
+000015B2                           572          
+000015B2                           573  Rotate_Right
+000015B2  43F9 00001EC4            574          LEA     ROR, A1
+000015B8  103C 000E                575          MOVE.B  #14, D0
+000015BC  4E4F                     576          TRAP    #15
+000015BE  4EF9 000015D6            577          JMP     Rotate_Size_Table
+000015C4                           578          
+000015C4                           579  Rotate_Left
+000015C4  43F9 00001EC0            580          LEA     ROL, A1
+000015CA  103C 000E                581          MOVE.B  #14, D0
+000015CE  4E4F                     582          TRAP    #15
+000015D0  4EF9 000015D6            583          JMP     Rotate_Size_Table
+000015D6                           584          
+000015D6                           585  Rotate_Size_TABLE:
+000015D6  B83C 0000                586          CMP.B   #%000, D4
+000015DA  6700 001A                587          BEQ     Rotate_B
+000015DE  B83C 0001                588          CMP.B   #%001, D4
+000015E2  6700 002E                589          BEQ     Rotate_W
+000015E6  B83C 0002                590          CMP.B   #%010, D4
+000015EA  6700 0042                591          BEQ     Rotate_L
+000015EE  B83C 0003                592          CMP.B   #%11, D4
+000015F2  6700 0056                593          BEQ     Rotate_EA
+000015F6                           594          
+000015F6                           595  Rotate_B
+000015F6  43F9 00001E3E            596          LEA     SIZE_BYTE,A1
+000015FC  103C 000E                597          MOVE.B  #14, D0
+00001600  4E4F                     598          TRAP    #15
+00001602  B23C 0000                599          CMP.B   #%0, D1
+00001606  6700 00A0                600          BEQ     Rotate_Print_immediate
+0000160A  B23C 0001                601          CMP.B   #%1, D1
+0000160E  6700 007E                602          BEQ     Rotate_Print_Register
+00001612                           603          
+00001612                           604  Rotate_W
+00001612  43F9 00001E42            605          LEA     SIZE_WORD,A1
+00001618  103C 000E                606          MOVE.B  #14, D0
+0000161C  4E4F                     607          TRAP    #15
+0000161E  B23C 0000                608          CMP.B   #%0, D1
+00001622  6700 0084                609          BEQ     Rotate_Print_immediate
+00001626  B23C 0001                610          CMP.B   #%1, D1
+0000162A  6700 0062                611          BEQ     Rotate_Print_Register
+0000162E                           612  
+0000162E                           613  Rotate_L
+0000162E  43F9 00001E46            614          LEA     SIZE_LONG,A1
+00001634  103C 000E                615          MOVE.B  #14, D0
+00001638  4E4F                     616          TRAP    #15
+0000163A  B23C 0000                617          CMP.B   #%0, D1
+0000163E  6700 0068                618          BEQ     Rotate_Print_immediate
+00001642  B23C 0001                619          CMP.B   #%1, D1
+00001646  6700 0046                620          BEQ     Rotate_Print_Register
+0000164A                           621          
+0000164A                           622  Rotate_EA
+0000164A  13FC 0001 00001ED8       623          MOVE.B  #%01, OpCodeSize
+00001652  43F9 00001E3A            624          LEA     SPACER, A1
+00001658  103C 000E                625          MOVE.B  #14, D0
+0000165C  4E4F                     626          TRAP    #15
+0000165E  1005                     627          MOVE.B  D5, D0
+00001660  1202                     628          MOVE.B  D2, D1
+00001662  ED49                     629          LSL.W   #6, D1
+00001664  E049                     630          LSR.W   #8, D1
+00001666  EA49                     631          LSR.W   #5, D1
+00001668                           632          
+00001668                           633  ROTATE_EACHECKER:
+00001668  B23C 0002                634          CMP.B   #%0010, D1
+0000166C  6700 0360                635          BEQ     JMPTO_DEST_INDR_ADDR_REG
+00001670  B23C 0003                636          CMP.B   #%0011, D1
+00001674  6700 0358                637          BEQ     JMPTO_DEST_INDR_ADDR_REG
+00001678  B23C 0004                638          CMP.B   #%0100, D1
+0000167C  6700 0350                639          BEQ     JMPTO_DEST_INDR_ADDR_REG
+00001680  4EF9 00001CCE            640          JMP     PRINTINVALIDEA
+00001686  B23C 0007                641          CMP.B   #%0111, D1
+0000168A  6700 0424                642          BEQ     JMPTO_DEST_IMMEDIATE
+0000168E                           643          
+0000168E                           644  Rotate_Print_REGISTER
+0000168E  1006                     645          MOVE.B  D6, D0
+00001690  123C 0000                646          MOVE.B  #%000, D1
+00001694  4EB9 000018C6            647          JSR     EACHECKER
+0000169A  1005                     648          MOVE.B  D5, D0
+0000169C  4241                     649          CLR     D1
+0000169E  4EB9 000018FC            650          JSR     DESTEACHECKER
+000016A4  4EF8 10F2                651          JMP     AddrLoop
+000016A8                           652          
+000016A8                           653  Rotate_Print_immediate
+000016A8  43F9 00001EAB            654          LEA     POUND_SIGN, A1
+000016AE  103C 000E                655          MOVE.B  #14, D0
+000016B2  4E4F                     656          TRAP    #15
+000016B4  BC3C 0000                657          CMP.B   #%0000, D6
+000016B8  6700 0022                658          BEQ     PRINT8
+000016BC  1206                     659          MOVE.B  D6, D1
+000016BE  143C 000A                660          MOVE.B  #10, D2
+000016C2  103C 000F                661          MOVE.B  #15, D0
+000016C6  4E4F                     662          TRAP    #15
+000016C8                           663          
+000016C8                           664  Rotate_Print_ImmediateCONT:
+000016C8  4EB9 00001CC0            665          JSR     PRINTCOMMA
+000016CE  1005                     666          MOVE.B  D5, D0
+000016D0  123C 0000                667          MOVE.B  #%000, D1
+000016D4  4EB8 1668                668          JSR     ROTATE_EACHECKER
+000016D8  4EF8 10F2                669          JMP     AddrLoop
+000016DC                           670  
+000016DC                           671  PRINT8:
+000016DC  1204                     672          MOVE.B  D4, D1
+000016DE  143C 000A                673          MOVE.B  #10, D2
+000016E2  103C 000F                674          MOVE.B  #15, D0
+000016E6  4E4F                     675          TRAP    #15
+000016E8  4EF8 16C8                676          JMP     Rotate_Print_ImmediateCONT
+000016EC                           677          
+000016EC                           678  * End of ROR, ROL, (Kelvin)                
+000016EC                           679          
+000016EC                           680  * =============================================
+000016EC                           681  * JMP Table for SUB OPMODES
+000016EC                           682  SubTable:
+000016EC  4EF9 0000171C            683          JMP     OPMODE000 * BYTE  EA->DN
+000016F2  4EF9 00001736            684          JMP     OPMODE001 * WORD  RA->DN  
+000016F8  4EF9 00001748            685          JMP     OPMODE010 * LONG  EA->DN 
+000016FE  4EF9 0000175A            686          JMP     OPMODE011 * ADDA  WORD
+00001704  4EF9 00001788            687          JMP     OPMODE100 * BYTE  DN->EA
+0000170A  4EF9 000017A0            688          JMP     OPMODE101 * BYTE  DN->EA
+00001710  4EF9 000017B8            689          JMP     OPMODE110 * BYTE  DN->EA
+00001716  4EF9 000017D0            690          JMP     OPMODE111 * ADDA  LONG
+0000171C                           691          
+0000171C                           692  OPMODE000:
+0000171C  13FC 0000 00001ED8       693          MOVE.B  #%00, OPCODESIZE  *Used for immediate address 00 Byte 11 Word 01 Long
+00001724  1A00                     694          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+00001726  43F9 00001E3E            695          LEA     SIZE_BYTE, A1
+0000172C  103C 000E                696          MOVE.B  #14, D0
+00001730  4E4F                     697          TRAP    #15
+00001732  6000 00DC                698          BRA     Sub_OPMODE_FIRST
+00001736                           699  OPMODE001
+00001736  1A00                     700          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+00001738  43F9 00001E42            701          LEA     SIZE_Word, A1
+0000173E  103C 000E                702          MOVE.B  #14, D0
+00001742  4E4F                     703          TRAP    #15
+00001744  6000 00CA                704          BRA     Sub_OPMODE_FIRST
+00001748                           705  OPMODE010
+00001748  1A00                     706          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+0000174A  43F9 00001E46            707          LEA     SIZE_Long, A1
+00001750  103C 000E                708          MOVE.B  #14, D0
+00001754  4E4F                     709          TRAP    #15
+00001756  6000 00B8                710          BRA     Sub_OPMODE_FIRST
+0000175A                           711  *===============================================
+0000175A                           712  *Special OPMODE can only be used by ADD
+0000175A                           713  OPMODE011
+0000175A  0C38 000D 1206           714          CMP.B   #%1101, OpCode
+00001760  6700 0008                715          BEQ     Special_OPMODE_USED
+00001764  4EF9 00001CCE            716          JMP     PRINTINVALIDEA
+0000176A                           717  Special_OPMODE_USED:
+0000176A  1A00                     718          MOVE.B  D0, D5
+0000176C  43F9 00001E63            719          LEA     MOVEA, A1
+00001772  103C 000E                720          MOVE.B  #14, D0
+00001776  4E4F                     721          TRAP    #15
+00001778  43F9 00001E42            722          LEA     SIZE_WORD, A1
+0000177E  103C 000E                723          MOVE.B  #14, D0
+00001782  4E4F                     724          TRAP    #15
+00001784  6000 00CE                725          BRA     Sub_OPMODE_ADDA
+00001788                           726  OPMODE100
+00001788  1A00                     727          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+0000178A  43F9 00001E3E            728          LEA     SIZE_BYTE, A1
+00001790  103C 000E                729          MOVE.B  #14, D0
+00001794  4E4F                     730          TRAP    #15
+00001796  4EB9 000017FE            731          JSR     Memory_Alterable_Check
+0000179C  6000 0090                732          BRA     Sub_OPMODE_SECOND
+000017A0                           733  OPMODE101
+000017A0  1A00                     734          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+000017A2  43F9 00001E42            735          LEA     SIZE_Word, A1
+000017A8  103C 000E                736          MOVE.B  #14, D0
+000017AC  4E4F                     737          TRAP    #15
+000017AE  4EB9 000017FE            738          JSR     Memory_Alterable_Check
+000017B4  6000 0078                739          BRA     Sub_OPMODE_SECOND
+000017B8                           740  OPMODE110
+000017B8  1A00                     741          MOVE.B  D0, D5   * TEMP STORAGE for DATA register
+000017BA  43F9 00001E46            742          LEA     SIZE_LONG, A1
+000017C0  103C 000E                743          MOVE.B  #14, D0
+000017C4  4E4F                     744          TRAP    #15
+000017C6  4EB9 000017FE            745          JSR     Memory_Alterable_Check
+000017CC  6000 0060                746          BRA     Sub_OPMODE_SECOND
+000017D0                           747  OPMODE111:
+000017D0  0C38 000D 1206           748          CMP.B   #%1101, OpCode
+000017D6  6700 0008                749          BEQ     Special_OPMODE_USED2
+000017DA  4EF9 00001CCE            750          JMP     PRINTINVALIDEA
+000017E0                           751  Special_OPMODE_USED2:
+000017E0  1A00                     752          MOVE.B  D0, D5
+000017E2  43F9 00001E63            753          LEA     MOVEA, A1
+000017E8  103C 000E                754          MOVE.B  #14, D0
+000017EC  4E4F                     755          TRAP    #15
+000017EE  43F9 00001E46            756          LEA     SIZE_LONG, A1
+000017F4  103C 000E                757          MOVE.B  #14, D0
+000017F8  4E4F                     758          TRAP    #15
+000017FA  6000 0058                759          BRA     Sub_OPMODE_ADDA
+000017FE                           760  *===================================================
+000017FE                           761  * USED FOR SUB AND OR, check if dest EA is memory Alterable
+000017FE                           762  
+000017FE                           763  Memory_Alterable_Check:
+000017FE  B23C 0000                764          CMP.B   #%000, D1
+00001802  6700 04CA                765          BEQ     PRINTINVALIDEA
+00001806  B23C 0001                766          CMP.B   #%001, D1
+0000180A  6700 04C2                767          BEQ     PRINTINVALIDEA
+0000180E  4E75                     768          RTS
+00001810                           769          
+00001810                           770  *===============================================
+00001810                           771  * Used for Dn->EA for SUB
+00001810                           772  * Called by 001, 010, 100, 
+00001810                           773  Sub_OPMODE_FIRST:
+00001810  1005                     774          MOVE.B  D5, D0   * TEMP RETURN D0
+00001812  4EB9 000018C6            775          JSR     EACHECKER 
+00001818  4280                     776          CLR.L     D0
+0000181A  4281                     777          CLR.L     D1
+0000181C  4EB9 00001CC0            778          JSR     PRINTCOMMA
+00001822  1003                     779          MOVE.B  D3, D0
+00001824  4EB9 000018FC            780          JSR     DestEAChecker 
+0000182A  6000 F8C6                781          BRA     addrloop *EA FINISHED---------------------------------------------------------------------------------------------------------------------------
+0000182E                           782  *===============================================
+0000182E                           783  * Used for Dn->EA for SUB
+0000182E                           784  * Called by 100, 101, 110 
+0000182E                           785  Sub_OPMODE_SECOND:
+0000182E  1801                     786          MOVE.B  D1, D4   *TEMP STORE D1
+00001830  4280                     787          CLR.L     D0  *Clean D0
+00001832  1003                     788          MOVE.B  D3, D0
+00001834  4281                     789          CLR.L     D1
+00001836  4EB9 000018C6            790          JSR     EACHECKER yeah
+0000183C  4280                     791          CLR.L     D0
+0000183E  4281                     792          CLR.L     D1
+00001840  4EB9 00001CC0            793          JSR     PRINTCOMMA
+00001846  1005                     794          MOVE.B  D5, D0   * TEMP RETURN D0
+00001848  1204                     795          MOVE.B  D4, D1   * TEMP RETURN D1
+0000184A  4EB9 000018FC            796          JSR     DestEAChecker 
+00001850  6000 F8A0                797          BRA     addrloop *EA FINISHED-----
+00001854                           798  *===============================================
+00001854                           799  * Used for Dn->EA for SUB
+00001854                           800  * Called by 011, 111
+00001854                           801  Sub_OPMODE_ADDA:
+00001854  1005                     802          MOVE.B  D5, D0   * TEMP RETURN D0
+00001856  4EB9 000018C6            803          JSR     EACHECKER 
+0000185C  4240                     804          CLR     D0
+0000185E  4241                     805          CLR     D1
+00001860  4EB9 00001CC0            806          JSR     PRINTCOMMA
+00001866  1003                     807          MOVE.B  D3, D0
+00001868  123C 0001                808          MOVE.B  #%001, D1
+0000186C  4EB9 000018FC            809          JSR     DestEAChecker 
+00001872  6000 F87E                810          BRA     addrloop *EA FINISHED---------------------------------------------------------------------------------------------------------------------------
+00001876                           811          
+00001876                           812  * CHECK FOR MOVEA BC it has the same OPCODE as MOVE
+00001876                           813  CHECK_MOVEA
+00001876  2602                     814          MOVE.L  D2, D3  * HOlding D2 in D3 temp
+00001878  E18A                     815          LSL.L   #8, D2 // Remove first 20 bits to get opperand
+0000187A  E18A                     816          LSL.L   #8, D2
+0000187C  E98A                     817          LSL.L   #4, D2
+0000187E  E08A                     818          LSR.L   #8, D2
+00001880  E08A                     819          LSR.L   #8, D2
+00001882  E88A                     820          LSR.L   #4, D2 // 12 bits of opperand found
+00001884  EC8A                     821          LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
+00001886  1202                     822          MOVE.B  D2, D1 * Prepare D1 for Mode
+00001888  EB09                     823          LSL.B   #5, D1  * Shift 5 bits to get rid of Register and size
+0000188A  EA09                     824          LSR.B   #5, D1
+0000188C  B23C 0001                825          CMP.B   #%001, D1
+00001890  6700 0006                826          BEQ     PRINTA
+00001894  2403                     827          MOVE.L  D3, D2 
+00001896  4E75                     828          RTS * Goes back to OP Value
+00001898                           829          
+00001898                           830  PRINTA
+00001898  43F9 00001E63            831          LEA     MOVEA, A1
+0000189E  103C 000E                832          MOVE.B  #14, D0
+000018A2  4E4F                     833          TRAP    #15
+000018A4  2403                     834          MOVE.L  D3, D2
+000018A6  4E75                     835          RTS * Goes back to CHECK_MOVEA
+000018A8                           836          
+000018A8                           837          
+000018A8                           838  * EA STARTS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+000018A8                           839  *=================================================================
+000018A8                           840  *-----------EA-- Calculate EA used for Data Registers
+000018A8                           841  *----------Pre: D2, D0, D1 must be clear
+000018A8                           842  *----------POST: prints out EA, D0 will store Data Register #, D1 will store EA MODE
+000018A8                           843  EA:
+000018A8  4280                     844          CLR.L     D0  * Clear D0 and D1 so they don't conflict
+000018AA  4281                     845          CLR.L     D1
+000018AC  4283                     846          CLR.L     D3
+000018AE  E18A                     847          LSL.L   #8, D2 // Remove first 20 bits to get opperand
+000018B0  E18A                     848          LSL.L   #8, D2
+000018B2  E98A                     849          LSL.L   #4, D2
+000018B4  E08A                     850          LSR.L   #8, D2
+000018B6  E08A                     851          LSR.L   #8, D2
+000018B8  E88A                     852          LSR.L   #4, D2 // 12 bits of opperand found
+000018BA  1002                     853          MOVE.B  D2, D0 Source Data Register
+000018BC  EB08                     854          LSL.B   #5, D0
+000018BE  EA08                     855          LSR.B   #5, D0
+000018C0  1202                     856          MOVE.B  D2, D1 *Source Data Mode
+000018C2  E509                     857          LSL.B   #2, D1
+000018C4  EA09                     858          LSR.B   #5, D1
+000018C6                           859          
+000018C6                           860  *=================================================
+000018C6                           861  *-----------EA CHECKER------Continues from EA
+000018C6                           862  *-----------Pre: D1 must contain the Mode of EA, D0 must store register# of EA        
+000018C6                           863  * TODO: ERROR CHECKING, OTHER MODES other than D0, USE 4 HEX FOR COMPARISON
+000018C6                           864  EACHECKER: 
+000018C6  B23C 0000                865          CMP.B   #%0000, D1
+000018CA  6700 0086                866          BEQ     JMPTOSRCREG *JUMPS TO Source D registers
+000018CE  B23C 0001                867          CMP.B   #%0001, D1
+000018D2  6700 009E                868          BEQ     JMPTO_SRC_ADDR_REG
+000018D6  B23C 0002                869          CMP.B   #%0010, D1
+000018DA  6700 00B6                870          BEQ     JMPTO_SRC_INDR_ADDR_REG
+000018DE  B23C 0003                871          CMP.B   #%0011, D1
+000018E2  6700 00AE                872          BEQ     JMPTO_SRC_INDR_ADDR_REG
+000018E6  B23C 0004                873          CMP.B   #%0100, D1
+000018EA  6700 00A6                874          BEQ     JMPTO_SRC_INDR_ADDR_REG
+000018EE  B23C 0007                875          CMP.B   #%0111, D1
+000018F2  6700 019E                876          BEQ     JMPTO_SRC_IMMEDIATE
+000018F6  4EF9 00001CCE            877          JMP     PRINTINVALIDEA
+000018FC                           878          
+000018FC                           879  *=================================================
+000018FC                           880  *-----------DEST EA CHECKER------Continues from EA
+000018FC                           881  *-----------Pre: D1 must contain the Mode of EA, D0 must store register# of EA        
+000018FC                           882  * TODO: ERROR CHECKING, OTHER MODES other than D0, USE 4 HEX FOR COMPARISON        
+000018FC                           883  DESTEACHECKER:
+000018FC  B23C 0000                884          CMP.B   #%0000, D1
+00001900  6700 0060                885          BEQ     JMPTODestREG *JUMPS TO Source D registers
+00001904  B23C 0001                886          CMP.B   #%0001, D1
+00001908  6700 0078                887          BEQ     JMPTO_DEST_ADDR_REG
+0000190C  B23C 0002                888          CMP.B   #%0010, D1
+00001910  6700 00BC                889          BEQ     JMPTO_DEST_INDR_ADDR_REG
+00001914  B23C 0003                890          CMP.B   #%0011, D1
+00001918  6700 00B4                891          BEQ     JMPTO_DEST_INDR_ADDR_REG
+0000191C  B23C 0004                892          CMP.B   #%0100, D1
+00001920  6700 00AC                893          BEQ     JMPTO_DEST_INDR_ADDR_REG
+00001924  B23C 0007                894          CMP.B   #%0111, D1
+00001928  6700 0186                895          BEQ     JMPTO_DEST_IMMEDIATE
+0000192C  4EF9 00001CCE            896          JMP     PRINTINVALIDEA
+00001932                           897          
+00001932                           898  *=================================================      
+00001932                           899  * Dest EA Finder
+00001932                           900  * PRE: ONLY USED FOR MOVE
+00001932                           901  * POST: PRINTS DEST EA  
+00001932                           902  DestEAFinder:
+00001932  4EB9 00001CC0            903          JSR     PRINTCOMMA  * Prints comma between two operrands
+00001938  EC8A                     904          LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
+0000193A  4241                     905          CLR     D1     * Clear D1 and D0 for opperand mode and register
+0000193C  4240                     906          CLR     D0
+0000193E  1202                     907          MOVE.B  D2, D1 * Prepare D1 for Mode
+00001940  EB09                     908          LSL.B   #5, D1  * Shift 5 bits to get rid of Register and size
+00001942  EA09                     909          LSR.B   #5, D1
+00001944  1002                     910          MOVE.B  D2, D0  *Prepare D0 for Register
+00001946  E508                     911          LSL.B   #2, D0
+00001948  EA08                     912          LSR.B   #5, D0
+0000194A  4EB8 18FC                913          JSR     DESTEACHECKER
+0000194E  4EF8 10F2                914          JMP     AddrLoop     ****Remember to send this back to next step loop&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+00001952                           915  
+00001952                           916          
+00001952                           917  *===================================================
+00001952                           918  *-------------Data Register checker------------------        
+00001952                           919  JMPTOSRCREG:
+00001952  43F9 00001B74            920          LEA     DATAREGTABLE, A1
+00001958  C0FC 0006                921          MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
+0000195C  4EB1 0000                922          JSR     (A1, D0) *JMP To index A1 + D0
+00001960                           923          * EA CONTINUES HERE
+00001960  4E75                     924          RTS * BRA DESTEAFINDER DELETED
+00001962                           925  JMPToDestReg: *PRINT OUT DEST Registers
+00001962  43F9 00001B74            926          LEA     DATAREGTABLE, A1
+00001968  C0FC 0006                927          MULU    #6, D0 * Multiply by 6 bc Each index between jmp table diff is 6
+0000196C  4EB1 0000                928          JSR     (A1, D0) *JMP to A1 + D0
+00001970  4E75                     929          RTS    * Goes Back to DestEAFinder
+00001972                           930          
+00001972                           931  
+00001972                           932  *===================================================
+00001972                           933  *-------------Address Register checker------------------             
+00001972                           934  JMPTO_SRC_ADDR_REG:
+00001972  43F9 00001BA4            935          LEA     AddrREGTABLE, A1
+00001978  C0FC 0006                936          MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
+0000197C  4EB1 0000                937          JSR     (A1, D0) *JMP To index A1 + D0
+00001980                           938          * EA CONTINUES HERE
+00001980  4E75                     939          RTS * BRA DESTEAFINDER DELETED
+00001982                           940  JMPTo_Dest_ADDR_Reg: *PRINT OUT DEST Registers
+00001982  43F9 00001BA4            941          LEA     AddrREGTABLE, A1
+00001988  C0FC 0006                942          MULU    #6, D0 * Multiply by 6 bc Each index between jmp table diff is 6
+0000198C  4EB1 0000                943          JSR     (A1, D0) *JMP to A1 + D0
+00001990  4E75                     944          RTS     * Goes Back to DESTEAFinder
+00001992                           945          
+00001992                           946  *===================================================
+00001992                           947  *-------------Indirect Address Register checker------------------
+00001992                           948  *Copied from Address Register checker, basically adding parenthesis () around Address register
+00001992                           949  * Also Detects ()+ and -()
+00001992                           950  * PRE: D1 stores mode, D0 stores register #
+00001992                           951  * D1 to D5 are off limits
+00001992                           952  JMPTO_SRC_INDR_ADDR_REG:
+00001992  1A00                     953         MOVE.B   D0, D5  *TEMP storage for D0 because it will be used by PRINT
+00001994  B23C 0004                954         CMP.B    #%100, D1       * IF IT IS -()
+00001998  6700 007E                955         BEQ      PRE_DECREMENT_SRC
+0000199C  43F9 00001EA1            956         LEA      INDR_LEFT, A1
+000019A2  103C 000E                957         MOVE.B   #14, D0
+000019A6  4E4F                     958         TRAP     #15
+000019A8  1005                     959         MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
+000019AA  43F9 00001BA4            960         LEA     AddrREGTABLE, A1
+000019B0  C0FC 0006                961         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
+000019B4  4EB1 0000                962         JSR     (A1, D0) *JMP To index A1 + D0
+000019B8  43F9 00001EA3            963         LEA      INDR_RIGHT, A1
+000019BE  103C 000E                964         MOVE.B   #14, D0
+000019C2  4E4F                     965         TRAP     #15
+000019C4  B23C 0003                966         CMP.B    #%0011, D1 * IF IT IS ()+
+000019C8  6700 0040                967         BEQ      POST_INCREMENT_SRC
+000019CC  4E75                     968         RTS * BRA DESTEAFINDER DELETED
+000019CE                           969         
+000019CE                           970  JMPTO_DEST_INDR_ADDR_REG:
+000019CE  1A00                     971         MOVE.B   D0, D5  *TEMP storage for D0 because it will be used by PRINT
+000019D0  B23C 0004                972         CMP.B    #%100, D1
+000019D4  6700 0086                973         BEQ      PRE_DECREMENT_DEST * IF IT IS -()
+000019D8  43F9 00001EA1            974         LEA      INDR_LEFT, A1
+000019DE  103C 000E                975         MOVE.B   #14, D0
+000019E2  4E4F                     976         TRAP     #15
+000019E4  1003                     977         MOVE.B   D3, D0   *TEMP storage for D0 because it will be used by PRINT
+000019E6  43F9 00001BA4            978         LEA     AddrREGTABLE, A1
+000019EC  C0FC 0006                979         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
+000019F0  4EB1 0000                980         JSR     (A1, D0) *JMP To index A1 + D0
+000019F4  43F9 00001EA3            981         LEA      INDR_RIGHT, A1
+000019FA  103C 000E                982         MOVE.B   #14, D0
+000019FE  4E4F                     983         TRAP     #15
+00001A00  B23C 0003                984         CMP.B    #%0011, D1  // IF IT IS ()+
+00001A04  6700 0048                985         BEQ      POST_INCREMENT_DEST
+00001A08  4E75                     986         RTS      * Goes Back to DestEAFinder
+00001A0A                           987         
+00001A0A                           988  POST_INCREMENT_SRC:
+00001A0A  43F9 00001EA5            989         LEA      POST_INCRE, A1
+00001A10  103C 000E                990         MOVE.B   #14, D0
+00001A14  4E4F                     991         TRAP     #15
+00001A16  4E75                     992         RTS * BRA DESTEAFINDER DELETED
+00001A18                           993         
+00001A18                           994  PRE_DECREMENT_SRC:
+00001A18  43F9 00001EA7            995         LEA      PRE_DECRE, A1
+00001A1E  103C 000E                996         MOVE.B   #14, D0
+00001A22  4E4F                     997         TRAP     #15
+00001A24  43F9 00001EA1            998         LEA      INDR_LEFT, A1
+00001A2A  103C 000E                999         MOVE.B   #14, D0
+00001A2E  4E4F                    1000         TRAP     #15
+00001A30  1005                    1001         MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
+00001A32  43F9 00001BA4           1002         LEA     AddrREGTABLE, A1
+00001A38  C0FC 0006               1003         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
+00001A3C  4EB1 0000               1004         JSR     (A1, D0) *JMP To index A1 + D0
+00001A40  43F9 00001EA3           1005         LEA      INDR_RIGHT, A1
+00001A46  103C 000E               1006         MOVE.B   #14, D0
+00001A4A  4E4F                    1007         TRAP     #15
+00001A4C  4E75                    1008         RTS * BRA DESTEAFINDER DELETED
+00001A4E                          1009  
+00001A4E                          1010  POST_INCREMENT_DEST
+00001A4E  43F9 00001EA5           1011         LEA      POST_INCRE, A1
+00001A54  103C 000E               1012         MOVE.B   #14, D0
+00001A58  4E4F                    1013         TRAP     #15
+00001A5A  4E75                    1014         RTS      * Goes Back to DestEAFinder
+00001A5C                          1015         
+00001A5C                          1016  PRE_DECREMENT_DEST:
+00001A5C  43F9 00001EA7           1017         LEA      PRE_DECRE, A1
+00001A62  103C 000E               1018         MOVE.B   #14, D0
+00001A66  4E4F                    1019         TRAP     #15
+00001A68  43F9 00001EA1           1020         LEA      INDR_LEFT, A1
+00001A6E  103C 000E               1021         MOVE.B   #14, D0
+00001A72  4E4F                    1022         TRAP     #15
+00001A74  1005                    1023         MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
+00001A76  43F9 00001BA4           1024         LEA     AddrREGTABLE, A1
+00001A7C  C0FC 0006               1025         MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
+00001A80  4EB1 0000               1026         JSR     (A1, D0) *JMP To index A1 + D0
+00001A84  43F9 00001EA3           1027         LEA      INDR_RIGHT, A1
+00001A8A  103C 000E               1028         MOVE.B   #14, D0
+00001A8E  4E4F                    1029         TRAP     #15
+00001A90  4E75                    1030         RTS      * Goes Back to DestEAFinder
+00001A92                          1031         
+00001A92                          1032  JMPTO_SRC_IMMEDIATE:
+00001A92  B03C 0000               1033         CMP.B    #%000, D0
+00001A96  6700 002E               1034         BEQ      Address_W
+00001A9A  B03C 0001               1035         CMP.B    #%001, D0
+00001A9E  6700 0044               1036         BEQ      Address_L
+00001AA2  B03C 0004               1037         CMP.B    #%100, D0
+00001AA6  6700 005A               1038         BEQ      Address_Immediate
+00001AAA  4EF9 00001CCE           1039         JMP      PRINTINVALIDEA
+00001AB0                          1040  *===================================  
+00001AB0                          1041  * Same as SRC but without Immediate address     
+00001AB0                          1042  JMPTO_DEST_IMMEDIATE:
+00001AB0  B03C 0000               1043         CMP.B    #%000, D0
+00001AB4  6700 0010               1044         BEQ      Address_W
+00001AB8  B03C 0001               1045         CMP.B    #%001, D0
+00001ABC  6700 0026               1046         BEQ      Address_L
+00001AC0  4EF9 00001CCE           1047         JMP      PRINTINVALIDEA
+00001AC6                          1048         
+00001AC6                          1049  Address_W:
+00001AC6  43F9 00001EA9           1050          LEA     DOLLAR_SIGN, A1
+00001ACC  103C 000E               1051          MOVE.B  #14, D0
+00001AD0  4E4F                    1052          TRAP    #15
+00001AD2  4241                    1053          CLR     D1
+00001AD4  4240                    1054          CLR     D0
+00001AD6  321E                    1055          MOVE.W  (A6)+, D1
+00001AD8  143C 0010               1056          MOVE.B  #16, D2
+00001ADC  103C 000F               1057          MOVE.B  #15, D0
+00001AE0  4E4F                    1058          TRAP    #15 
+00001AE2  4E75                    1059          RTS 
+00001AE4                          1060  
+00001AE4                          1061  Address_L
+00001AE4  43F9 00001EA9           1062          LEA     DOLLAR_SIGN, A1
+00001AEA  103C 000E               1063          MOVE.B  #14, D0
+00001AEE  4E4F                    1064          TRAP    #15
+00001AF0  4241                    1065          CLR     D1
+00001AF2  4240                    1066          CLR     D0
+00001AF4  221E                    1067          MOVE.L  (A6)+, D1
+00001AF6  143C 0010               1068          MOVE.B  #16, D2
+00001AFA  103C 000F               1069          MOVE.B  #15, D0
+00001AFE  4E4F                    1070          TRAP    #15
+00001B00  4E75                    1071          RTS  
+00001B02                          1072          
+00001B02                          1073  Address_Immediate:
+00001B02  43F9 00001EAB           1074          LEA     POUND_SIGN, A1
+00001B08  103C 000E               1075          MOVE.B  #14, D0
+00001B0C  4E4F                    1076          TRAP    #15
+00001B0E  43F9 00001EA9           1077          LEA     DOLLAR_SIGN, A1
+00001B14  103C 000E               1078          MOVE.B  #14, D0
+00001B18  4E4F                    1079          TRAP    #15
+00001B1A  0C39 0001 00001ED8      1080          CMP.B   #%01, OpCodeSize *01 is used to mark invalid immediate for example ROR, ROL
+00001B22  6700 01AA               1081          BEQ     PRINTINVALIDEA
+00001B26  0C39 0000 00001ED8      1082          CMP.B   #%00, OpCodeSize
+00001B2E  6700 001A               1083          BEQ     Immediate_B
+00001B32  0C39 0003 00001ED8      1084          CMP.B   #%11, OpCodeSize
+00001B3A  6700 001C               1085          BEQ     Immediate_W
+00001B3E  0C39 0002 00001ED8      1086          CMP.B   #%10, OpCOdeSize
+00001B46  6700 001E               1087          BEQ     Immediate_L
+00001B4A                          1088          
+00001B4A                          1089  Immediate_B:
+00001B4A  121E                    1090          MOVE.B  (A6)+, D1
+00001B4C  143C 0010               1091          MOVE.B  #16, D2
+00001B50  103C 000F               1092          MOVE.B  #15, D0
+00001B54  4E4F                    1093          TRAP    #15
+00001B56  4E75                    1094          RTS
+00001B58                          1095          
+00001B58                          1096  Immediate_W:
+00001B58  321E                    1097          MOVE.W  (A6)+, D1
+00001B5A  143C 0010               1098          MOVE.B  #16, D2
+00001B5E  103C 000F               1099          MOVE.B  #15, D0
+00001B62  4E4F                    1100          TRAP    #15
+00001B64  4E75                    1101          RTS
+00001B66                          1102          
+00001B66                          1103  Immediate_L:
+00001B66  221E                    1104          MOVE.L  (A6)+, D1
+00001B68  143C 0010               1105          MOVE.B  #16, D2
+00001B6C  103C 000F               1106          MOVE.B  #15, D0
+00001B70  4E4F                    1107          TRAP    #15
+00001B72  4E75                    1108          RTS
+00001B74                          1109  
+00001B74                          1110          
+00001B74                          1111  
+00001B74                          1112  *=================================================================
+00001B74                          1113  *---------Data Register Table used for printing out Registers----
+00001B74                          1114  *----------Starts from index and use JRS (x,y) to jump to certain index, multiply by #6
+00001B74                          1115  DataRegTable
+00001B74  4EF9 00001BD4           1116          JMP REG_D0
+00001B7A  4EF9 00001BE8           1117          JMP REG_D1
+00001B80  4EF9 00001BF6           1118          JMP REG_D2
+00001B86  4EF9 00001C04           1119          JMP REG_D3
+00001B8C  4EF9 00001C12           1120          JMP REG_D4
+00001B92  4EF9 00001C20           1121          JMP REG_D5
+00001B98  4EF9 00001C2E           1122          JMP REG_D6
+00001B9E  4EF9 00001C3C           1123          JMP REG_D7
+00001BA4                          1124  
+00001BA4                          1125  AddrRegTable:
+00001BA4                          1126          
+00001BA4  4EF9 00001C4A           1127          JMP REG_A0
+00001BAA  4EF9 00001C5E           1128          JMP REG_A1
+00001BB0  4EF9 00001C6C           1129          JMP REG_A2
+00001BB6  4EF9 00001C7A           1130          JMP REG_A3
+00001BBC  4EF9 00001C88           1131          JMP REG_A4
+00001BC2  4EF9 00001C96           1132          JMP REG_A5
+00001BC8  4EF9 00001CA4           1133          JMP REG_A6
+00001BCE  4EF9 00001CB2           1134          JMP REG_A7
+00001BD4                          1135  
+00001BD4                          1136  * Data Registers Printing        
+00001BD4                          1137  REG_D0:
+00001BD4  227C 00000000           1138          MOVEA.L #$0, A1
+00001BDA  43F9 00001E71           1139          LEA     DREG0, A1
+00001BE0  103C 000E               1140          MOVE.B  #14, D0
+00001BE4  4E4F                    1141          TRAP    #15
+00001BE6  4E75                    1142          RTS
+00001BE8                          1143          
+00001BE8                          1144  REG_D1:
+00001BE8  43F9 00001E74           1145          LEA     DREG1, A1
+00001BEE  103C 000E               1146          MOVE.B  #14, D0
+00001BF2  4E4F                    1147          TRAP    #15
+00001BF4  4E75                    1148          RTS
+00001BF6                          1149  REG_D2:
+00001BF6  43F9 00001E77           1150          LEA     DREG2, A1
+00001BFC  103C 000E               1151          MOVE.B  #14, D0
+00001C00  4E4F                    1152          TRAP    #15
+00001C02  4E75                    1153          RTS
+00001C04                          1154  REG_D3:
+00001C04  43F9 00001E7A           1155          LEA     DREG3, A1
+00001C0A  103C 000E               1156          MOVE.B  #14, D0
+00001C0E  4E4F                    1157          TRAP    #15
+00001C10  4E75                    1158          RTS
+00001C12                          1159  REG_D4:
+00001C12  43F9 00001E7D           1160          LEA     DREG4, A1
+00001C18  103C 000E               1161          MOVE.B  #14, D0
+00001C1C  4E4F                    1162          TRAP    #15
+00001C1E  4E75                    1163          RTS
+00001C20                          1164  REG_D5:
+00001C20  43F9 00001E80           1165          LEA     DREG5, A1
+00001C26  103C 000E               1166          MOVE.B  #14, D0
+00001C2A  4E4F                    1167          TRAP    #15
+00001C2C  4E75                    1168          RTS
+00001C2E                          1169  REG_D6:
+00001C2E  43F9 00001E83           1170          LEA     DREG6, A1
+00001C34  103C 000E               1171          MOVE.B  #14, D0
+00001C38  4E4F                    1172          TRAP    #15
+00001C3A  4E75                    1173          RTS
+00001C3C                          1174  REG_D7:
+00001C3C  43F9 00001E86           1175          LEA     DREG7, A1
+00001C42  103C 000E               1176          MOVE.B  #14, D0
+00001C46  4E4F                    1177          TRAP    #15
+00001C48  4E75                    1178          RTS
+00001C4A                          1179          
+00001C4A                          1180  *--------------------Addr Reigster printing ------------------------*        
+00001C4A                          1181  REG_A0:
+00001C4A  227C 00000000           1182          MOVEA.L #$0, A1
+00001C50  43F9 00001E89           1183          LEA     AREG0, A1
+00001C56  103C 000E               1184          MOVE.B  #14, D0
+00001C5A  4E4F                    1185          TRAP    #15
+00001C5C  4E75                    1186          RTS
+00001C5E                          1187          
+00001C5E                          1188  REG_A1:
+00001C5E  43F9 00001E8C           1189          LEA     AREG1, A1
+00001C64  103C 000E               1190          MOVE.B  #14, D0
+00001C68  4E4F                    1191          TRAP    #15
+00001C6A  4E75                    1192          RTS
+00001C6C                          1193  REG_A2:
+00001C6C  43F9 00001E8F           1194          LEA     AREG2, A1
+00001C72  103C 000E               1195          MOVE.B  #14, D0
+00001C76  4E4F                    1196          TRAP    #15
+00001C78  4E75                    1197          RTS
+00001C7A                          1198  REG_A3:
+00001C7A  43F9 00001E92           1199          LEA     AREG3, A1
+00001C80  103C 000E               1200          MOVE.B  #14, D0
+00001C84  4E4F                    1201          TRAP    #15
+00001C86  4E75                    1202          RTS
+00001C88                          1203  REG_A4:
+00001C88  43F9 00001E95           1204          LEA     AREG4, A1
+00001C8E  103C 000E               1205          MOVE.B  #14, D0
+00001C92  4E4F                    1206          TRAP    #15
+00001C94  4E75                    1207          RTS
+00001C96                          1208  REG_A5:
+00001C96  43F9 00001E98           1209          LEA     AREG5, A1
+00001C9C  103C 000E               1210          MOVE.B  #14, D0
+00001CA0  4E4F                    1211          TRAP    #15
+00001CA2  4E75                    1212          RTS
+00001CA4                          1213  REG_A6:
+00001CA4  43F9 00001E9B           1214          LEA     AREG6, A1
+00001CAA  103C 000E               1215          MOVE.B  #14, D0
+00001CAE  4E4F                    1216          TRAP    #15
+00001CB0  4E75                    1217          RTS
+00001CB2                          1218  REG_A7:
+00001CB2  43F9 00001E9E           1219          LEA     AREG7, A1
+00001CB8  103C 000E               1220          MOVE.B  #14, D0
+00001CBC  4E4F                    1221          TRAP    #15
+00001CBE  4E75                    1222          RTS
+00001CC0                          1223          
+00001CC0                          1224  *====================================================PRinting/ ERROR method comes down here=========================================
+00001CC0                          1225  PRINTCOMMA: * Prints comma between two operrands
+00001CC0  43F9 00001E37           1226          LEA     COMMA, A1
+00001CC6  103C 000E               1227          MOVE.B  #14, D0
+00001CCA  4E4F                    1228          TRAP    #15
+00001CCC  4E75                    1229          RTS
+00001CCE                          1230          
+00001CCE                          1231  PrintInvalidEA:
+00001CCE  43F9 00001D94           1232          LEA     Invalid_EA_Addr, A1
+00001CD4  103C 000E               1233          MOVE.B  #14, D0
+00001CD8  4E4F                    1234          TRAP    #15
+00001CDA  4EF8 10F2               1235          JMP     AddrLoop
+00001CDE                          1236          
+00001CDE                          1237  PrintInvalidSUB:
+00001CDE  43F9 00001DAA           1238          LEA     Invalid_EA_SUB, A1
+00001CE4  103C 000E               1239          MOVE.B  #14, D0
+00001CE8  4E4F                    1240          TRAP    #15
+00001CEA  4EF8 10F2               1241          JMP     AddrLoop
+00001CEE                          1242          
+00001CEE                          1243  PrintInvalidAddress:
+00001CEE  43F9 00001DC8           1244          LEA     Invalid_Address, A1
+00001CF4  103C 000E               1245          MOVE.B  #14, D0
+00001CF8  4E4F                    1246          TRAP    #15
+00001CFA  4EF8 1006               1247          JMP     GETINPUT
+00001CFE                          1248          
+00001CFE                          1249  PrintDATA:
+00001CFE  43F9 00001E65           1250          LEA     DATA, A1
+00001D04  103C 000E               1251          MOVE.B  #14, D0
+00001D08  4E4F                    1252          TRAP    #15
+00001D0A  3202                    1253          MOVE.W  D2, D1
+00001D0C  143C 0010               1254          MOVE.B  #16, D2
+00001D10  103C 000F               1255          MOVE.B  #15, D0
+00001D14  4E4F                    1256          TRAP    #15
+00001D16  6000 F3DA               1257          BRA     AddrLoop
+00001D1A                          1258           
+00001D1A                          1259  * Clear all registers    
+00001D1A                          1260  CLRREG:
+00001D1A  7000                    1261      MOVE.L  #0, D0
+00001D1C  7200                    1262      MOVE.L  #0, D1
+00001D1E  7400                    1263      MOVE.L  #0, D2
+00001D20  7600                    1264      MOVE.L  #0, D3
+00001D22  7800                    1265      MOVE.L  #0, D4
+00001D24  7A00                    1266      MOVE.L  #0, D5
+00001D26  7C00                    1267      MOVE.L  #0, D6
+00001D28  7E00                    1268      MOVE.L  #0, D7
+00001D2A  4E75                    1269      RTS
+00001D2C                          1270      
+00001D2C                          1271  CLRAREG:
+00001D2C  207C 00000000           1272      MOVE.L  #0, A0
+00001D32  227C 00000000           1273      MOVE.L  #0, A1
+00001D38  247C 00000000           1274      MOVE.L  #0, A2
+00001D3E  267C 00000000           1275      MOVE.L  #0, A3
+00001D44  287C 00000000           1276      MOVE.L  #0, A4
+00001D4A  2A7C 00000000           1277      MOVE.L  #0, A5
+00001D50  4E75                    1278      RTS
+00001D52                          1279  
+00001D52                          1280      
+00001D52                          1281      
+00001D52                          1282          
+00001D52                          1283  * Put program code here
+00001D52                          1284  
+00001D52  FFFF FFFF               1285      SIMHALT             ; halt simulator
+00001D56                          1286  
+00001D56                          1287  * Put variables and constants here
+00001D56  =0000000D               1288  CR  EQU $0D
+00001D56  =0000000A               1289  LF  EQU $0A
+00001D56= 50 6C 65 61 73 65 ...   1290  WELCOME     DC.B    'Please enter starting address', CR, LF, 0
+00001D76= 50 6C 65 61 73 65 ...   1291  WELCOME2    DC.B    'Please enter ending address', CR, LF, 0
+00001D94= 49 6E 76 61 6C 69 ...   1292  Invalid_EA_ADDR DC.B   'Invalid EA detected', CR, LF, 0
+00001DAA= 49 6E 76 61 6C 69 ...   1293  INVALID_EA_SUB  DC.B    'Invalid SUB OPMODE Detected', CR, LF, 0
+00001DC8= 47 69 76 65 6E 20 ...   1294  Invalid_Address DC.B    'Given address is Invalid', CR, LF, 0
+00001DE3= 43 6F 6E 74 69 6E ...   1295  Continue_Program    DC.B    'Continue Program? Y/N', CR, LF, 0
+00001DFB= 43 6F 6E 74 69 6E ...   1296  Continue_Screen DC.B    'Continue Screen? Y/N', CR, LF, 0
+00001E12= 0D 0A 00                1297  Print_NextLine  DC.B    '', CR, LF, 0
+00001E15= 54 68 61 6E 6B 20 ...   1298  TY_Message  DC.B    'Thank you for using our program', CR, LF, 0
+00001E37                          1299  
+00001E37= 2C 20 00                1300  COMMA       DC.B    ', ', 0
+00001E3A= 20 20 20 00             1301  SPACER      DC.B    '   ', 0
+00001E3E                          1302  *DATASIZE
+00001E3E= 2E 42 20 00             1303  SIZE_BYTE       DC.B    '.B ', 0
+00001E42= 2E 57 20 00             1304  SIZE_WORD       DC.B    '.W ', 0
+00001E46= 2E 4C 20 00             1305  SIZE_LONG       DC.B    '.L ', 0
+00001E4A                          1306  
+00001E4A                          1307  *MOVE OPCODES
+00001E4A= 4D 4F 56 45 00          1308  MOVE_PRINT  DC.B    'MOVE', 0
+00001E4F= 4D 4F 56 45 2E 42 ...   1309  MOVEB       DC.B    'MOVE.B ', 0
+00001E57= 2E 42 20 00             1310  SIZE_B       DC.B    '.B ', 0
+00001E5B= 2E 57 20 00             1311  MOVEW       DC.B    '.W ', 0
+00001E5F= 2E 4C 20 00             1312  MOVEL       DC.B    '.L ', 0
+00001E63= 41 00                   1313  MOVEA       DC.B    'A', 0
+00001E65= 44 41 54 41 3A 20 00    1314  DATA        DC.B    'DATA: ', 0
+00001E6C= 41 44 44 51 00          1315  ADDQ        DC.B    'ADDQ', 0
+00001E71                          1316  
+00001E71                          1317  
+00001E71                          1318  *DATA REGISTERS PRINTOUT
+00001E71= 44 30 00                1319  DREG0       DC.B    'D0', 0
+00001E74= 44 31 00                1320  DREG1       DC.B    'D1', 0
+00001E77= 44 32 00                1321  DREG2       DC.B    'D2', 0
+00001E7A= 44 33 00                1322  DREG3       DC.B    'D3', 0
+00001E7D= 44 34 00                1323  DREG4       DC.B    'D4', 0
+00001E80= 44 35 00                1324  DREG5       DC.B    'D5', 0
+00001E83= 44 36 00                1325  DREG6       DC.B    'D6', 0
+00001E86= 44 37 00                1326  DREG7       DC.B    'D7', 0 
+00001E89                          1327  
+00001E89                          1328  *ADDR REGISTERS PRINTOUT
+00001E89= 41 30 00                1329  AREG0       DC.B    'A0', 0
+00001E8C= 41 31 00                1330  AREG1       DC.B    'A1', 0
+00001E8F= 41 32 00                1331  AREG2       DC.B    'A2', 0
+00001E92= 41 33 00                1332  AREG3       DC.B    'A3', 0
+00001E95= 41 34 00                1333  AREG4       DC.B    'A4', 0
+00001E98= 41 35 00                1334  AREG5       DC.B    'A5', 0
+00001E9B= 41 36 00                1335  AREG6       DC.B    'A6', 0
+00001E9E= 41 37 00                1336  AREG7       DC.B    'A7', 0 
+00001EA1                          1337  
+00001EA1                          1338  *INDR_ADDR REGISTERS PRINTOUT
+00001EA1= 28 00                   1339  INDR_LEFT   DC.B    '(', 0
+00001EA3= 29 00                   1340  INDR_RIGHT  DC.B    ')', 0
+00001EA5= 2B 00                   1341  POST_INCRE   DC.B    '+', 0
+00001EA7= 2D 00                   1342  PRE_DECRE   DC.B    '-', 0
+00001EA9= 24 00                   1343  DOLLAR_SIGN DC.B    '$', 0
+00001EAB= 23 00                   1344  POUND_SIGN  DC.B    '#', 0
+00001EAD                          1345  
+00001EAD                          1346  *SUB
+00001EAD= 53 55 42 00             1347  SUBTRACT    DC.B    'SUB', 0
+00001EB1= 41 44 44 00             1348  ADDITION    DC.B    'ADD', 0
+00001EB5= 41 4E 44 00             1349  AND         DC.B    'AND', 0
+00001EB9= 4F 52 00                1350  OR          DC.B    'OR', 0
+00001EBC= 4E 4F 54 00             1351  NOT_OP      DC.B    'NOT', 0
+00001EC0= 52 4F 4C 00             1352  ROL         DC.B    'ROL', 0
+00001EC4= 52 4F 52 00             1353  ROR         DC.B    'ROR', 0
+00001EC8                          1354  
+00001EC8= 00000001                1355  addrStart   DC.L    1   // Starting address
+00001ECC= 00000001                1356  addrEnd     DC.L    1   // ending address
+00001ED0= 00000001                1357  OpCodeStorage DC.L    1
+00001ED4= 00000001                1358  ScreenCounter   DC.L    1
+00001ED8= 00000001                1359  OpCodeSize  DC.L    1
+00001EDC                          1360      END    START        ; last line of source
 
 No errors detected
 No warnings generated
@@ -1299,86 +1371,93 @@ SYMBOL TABLE INFORMATION
 Symbol-name         Value
 -------------------------
 A                   11E2
-ADDITION            1DF6
-ADDREND             1E12
-ADDRESS_IMMEDIATE   1A4C
-ADDRESS_L           1A2E
-ADDRESS_W           1A10
+ADDITION            1EB1
+ADDQ                1E6C
+ADDQ_B              140C
+ADDQ_L              1434
+ADDQ_PRINT_IMMEDIATE  1446
+ADDQ_PRINT_IMMEDIATECONT  1460
+ADDQ_SIZE_TABLE     13F4
+ADDQ_W              141E
+ADDREND             1ECC
+ADDRESS_IMMEDIATE   1B02
+ADDRESS_L           1AE4
+ADDRESS_W           1AC6
 ADDRLOOP            10F2
-ADDRREGTABLE        1AEE
-ADDRSTART           1E0E
+ADDRREGTABLE        1BA4
+ADDRSTART           1EC8
 ADDVAL              11DC
-AND                 1DFA
-AREG0               1DCE
-AREG1               1DD1
-AREG2               1DD4
-AREG3               1DD7
-AREG4               1DDA
-AREG5               1DDD
-AREG6               1DE0
-AREG7               1DE3
+AND                 1EB5
+AREG0               1E89
+AREG1               1E8C
+AREG2               1E8F
+AREG3               1E92
+AREG4               1E95
+AREG5               1E98
+AREG6               1E9B
+AREG7               1E9E
 B                   11E8
 C                   11EE
 CHAR                11AC
 CHECKRANGE          1086
 CHECK_CONT          112C
-CHECK_MOVEA         17C8
-CLRAREG             1C76
-CLRREG              1C64
-COMMA               1D81
-CONTINUE_PROGRAM    1D2D
-CONTINUE_SCREEN     1D45
+CHECK_MOVEA         1876
+CLRAREG             1D2C
+CLRREG              1D1A
+COMMA               1E37
+CONTINUE_PROGRAM    1DE3
+CONTINUE_SCREEN     1DFB
 CONVERT             1192
 CR                  D
 D                   11F4
-DATA                1DAF
-DATAREGTABLE        1ABE
-DESTEACHECKER       184E
-DESTEAFINDER        187C
-DOLLAR_SIGN         1DEE
-DREG0               1DB6
-DREG1               1DB9
-DREG2               1DBC
-DREG3               1DBF
-DREG4               1DC2
-DREG5               1DC5
-DREG6               1DC8
-DREG7               1DCB
+DATA                1E65
+DATAREGTABLE        1B74
+DESTEACHECKER       18FC
+DESTEAFINDER        1932
+DOLLAR_SIGN         1EA9
+DREG0               1E71
+DREG1               1E74
+DREG2               1E77
+DREG3               1E7A
+DREG4               1E7D
+DREG5               1E80
+DREG6               1E83
+DREG7               1E86
 E                   11FA
-EA                  17FA
-EACHECKER           1818
+EA                  18A8
+EACHECKER           18C6
 END                 10E0
 F                   1200
 GETINPUT            1006
-IMMEDIATE_B         1A94
-IMMEDIATE_L         1AB0
-IMMEDIATE_W         1AA2
-INDR_LEFT           1DE6
-INDR_RIGHT          1DE8
-INVALID_ADDRESS     1D12
-INVALID_EA_ADDR     1CDE
-INVALID_EA_SUB      1CF4
+IMMEDIATE_B         1B4A
+IMMEDIATE_L         1B66
+IMMEDIATE_W         1B58
+INDR_LEFT           1EA1
+INDR_RIGHT          1EA3
+INVALID_ADDRESS     1DC8
+INVALID_EA_ADDR     1D94
+INVALID_EA_SUB      1DAA
 JMPTABLE            1252
-JMPTODESTREG        18AC
-JMPTOSRCREG         189C
-JMPTO_DEST_ADDR_REG  18CC
-JMPTO_DEST_IMMEDIATE  19FA
-JMPTO_DEST_INDR_ADDR_REG  1918
-JMPTO_SRC_ADDR_REG  18BC
-JMPTO_SRC_IMMEDIATE  19DC
-JMPTO_SRC_INDR_ADDR_REG  18DC
+JMPTODESTREG        1962
+JMPTOSRCREG         1952
+JMPTO_DEST_ADDR_REG  1982
+JMPTO_DEST_IMMEDIATE  1AB0
+JMPTO_DEST_INDR_ADDR_REG  19CE
+JMPTO_SRC_ADDR_REG  1972
+JMPTO_SRC_IMMEDIATE  1A92
+JMPTO_SRC_INDR_ADDR_REG  1992
 LF                  A
 LOOP                1188
 LOWERLIMIT          3000
-MEMORY_ALTERABLE_CHECK  1750
-MOVEA               1DAD
-MOVEB               1D99
-MOVEL               1DA9
-MOVEW               1DA5
-MOVE_PRINT          1D94
+MEMORY_ALTERABLE_CHECK  17FE
+MOVEA               1E63
+MOVEB               1E4F
+MOVEL               1E5F
+MOVEW               1E5B
+MOVE_PRINT          1E4A
 NEXT_SCREEN         1156
 NOT_JMPTABLE        1354
-NOT_OP              1E01
+NOT_OP              1EBC
 NOT_SIZE00          136C
 NOT_SIZE01          138E
 NOT_SIZE10          13A8
@@ -1389,91 +1468,91 @@ OP0010              12CA
 OP0011              12FA
 OP0100              1322
 OP0101              13C6
-OP0110              13C6
-OP0111              13C6
-OP1000              1402
-OP1001              13C6
-OP1010              1446
-OP1011              1446
-OP1100              1446
-OP1101              1482
-OP1110              14BE
+OP0110              1476
+OP0111              1476
+OP1000              14B2
+OP1001              1476
+OP1010              14F6
+OP1011              14F6
+OP1100              14F6
+OP1101              1532
+OP1110              156E
 OPCODE              1206
-OPCODESIZE          1E1E
-OPCODESTORAGE       1E16
-OPMODE000           166E
-OPMODE001           1688
-OPMODE010           169A
-OPMODE011           16AC
-OPMODE100           16DA
-OPMODE101           16F2
-OPMODE110           170A
-OPMODE111           1722
-OR                  1DFE
-POST_INCRE          1DEA
-POST_INCREMENT_DEST  1998
-POST_INCREMENT_SRC  1954
-POUND_SIGN          1DF0
-PRE_DECRE           1DEC
-PRE_DECREMENT_DEST  19A6
-PRE_DECREMENT_SRC   1962
-PRINT8              162E
-PRINTA              17EA
-PRINTCOMMA          1C0A
-PRINTDATA           1C48
-PRINTINVALIDADDRESS  1C38
-PRINTINVALIDEA      1C18
-PRINTINVALIDSUB     1C28
-PRINT_NEXTLINE      1D5C
-REG_A0              1B94
-REG_A1              1BA8
-REG_A2              1BB6
-REG_A3              1BC4
-REG_A4              1BD2
-REG_A5              1BE0
-REG_A6              1BEE
-REG_A7              1BFC
-REG_D0              1B1E
-REG_D1              1B32
-REG_D2              1B40
-REG_D3              1B4E
-REG_D4              1B5C
-REG_D5              1B6A
-REG_D6              1B78
-REG_D7              1B86
-ROL                 1E05
+OPCODESIZE          1ED8
+OPCODESTORAGE       1ED0
+OPMODE000           171C
+OPMODE001           1736
+OPMODE010           1748
+OPMODE011           175A
+OPMODE100           1788
+OPMODE101           17A0
+OPMODE110           17B8
+OPMODE111           17D0
+OR                  1EB9
+POST_INCRE          1EA5
+POST_INCREMENT_DEST  1A4E
+POST_INCREMENT_SRC  1A0A
+POUND_SIGN          1EAB
+PRE_DECRE           1EA7
+PRE_DECREMENT_DEST  1A5C
+PRE_DECREMENT_SRC   1A18
+PRINT8              16DC
+PRINTA              1898
+PRINTCOMMA          1CC0
+PRINTDATA           1CFE
+PRINTINVALIDADDRESS  1CEE
+PRINTINVALIDEA      1CCE
+PRINTINVALIDSUB     1CDE
+PRINT_NEXTLINE      1E12
+REG_A0              1C4A
+REG_A1              1C5E
+REG_A2              1C6C
+REG_A3              1C7A
+REG_A4              1C88
+REG_A5              1C96
+REG_A6              1CA4
+REG_A7              1CB2
+REG_D0              1BD4
+REG_D1              1BE8
+REG_D2              1BF6
+REG_D3              1C04
+REG_D4              1C12
+REG_D5              1C20
+REG_D6              1C2E
+REG_D7              1C3C
+ROL                 1EC0
 ROLTEST             6000
-ROR                 1E09
-ROTATETABLE         14F6
-ROTATE_B            1546
-ROTATE_EA           159A
-ROTATE_EACHECKER    15B8
-ROTATE_L            157E
-ROTATE_LEFT         1514
-ROTATE_PRINT_IMMEDIATE  15F8
-ROTATE_PRINT_IMMEDIATECONT  1618
-ROTATE_PRINT_REGISTER  15DE
-ROTATE_RIGHT        1502
-ROTATE_SIZE_TABLE   1526
-ROTATE_W            1562
-SCREENCOUNTER       1E1A
-SIZE_B              1DA1
-SIZE_BYTE           1D88
-SIZE_LONG           1D90
-SIZE_WORD           1D8C
-SPACER              1D84
+ROR                 1EC4
+ROTATETABLE         15A6
+ROTATE_B            15F6
+ROTATE_EA           164A
+ROTATE_EACHECKER    1668
+ROTATE_L            162E
+ROTATE_LEFT         15C4
+ROTATE_PRINT_IMMEDIATE  16A8
+ROTATE_PRINT_IMMEDIATECONT  16C8
+ROTATE_PRINT_REGISTER  168E
+ROTATE_RIGHT        15B2
+ROTATE_SIZE_TABLE   15D6
+ROTATE_W            1612
+SCREENCOUNTER       1ED4
+SIZE_B              1E57
+SIZE_BYTE           1E3E
+SIZE_LONG           1E46
+SIZE_WORD           1E42
+SPACER              1E3A
 SPECIALTEST         5000
-SPECIAL_OPMODE_USED  16BC
-SPECIAL_OPMODE_USED2  1732
+SPECIAL_OPMODE_USED  176A
+SPECIAL_OPMODE_USED2  17E0
 START               1000
-SUBTABLE            163E
-SUBTRACT            1DF2
-SUB_OPMODE_ADDA     17A6
-SUB_OPMODE_FIRST    1762
-SUB_OPMODE_SECOND   1780
+SUBTABLE            16EC
+SUBTRACT            1EAD
+SUB_OPMODE_ADDA     1854
+SUB_OPMODE_FIRST    1810
+SUB_OPMODE_SECOND   182E
 TESTER              9000
-TY_MESSAGE          1D5F
+TY_MESSAGE          1E15
 UPPERLIMIT          FFFFFE
-WELCOME             1CA0
-WELCOME2            1CC0
+WELCOME             1D56
+WELCOME2            1D76
 YESNOSTORAGE        50
