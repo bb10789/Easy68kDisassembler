@@ -1,6 +1,6 @@
 *-----------------------------------------------------------
 * Title      :
-* Written by :
+* Written by : Kelvin Kam
 * Date       :
 * Description:
 *-----------------------------------------------------------
@@ -9,24 +9,7 @@ LowerLimit      EQU     $00003000
 UpperLimit      EQU     $00FFFFFE
 YesNoStorage    EQU     $00000050
 
-    ORG     $5000
-SPECIALTEST:
-        ADDQ    #5, D1
 
-    ORG    $6000
-ROLTEST:
-
-
-
-
-
-    ORG    $9000
-TESTER:
-        NOT.B       (A1)
-        NOT.W       (A1)+
-        NOT.L       (A3)
-        MOVE.B    D0,D1
-        MOVE.B    D0,D1
 
   
 
@@ -78,6 +61,9 @@ GETINPUT:
         
 CheckRange:
         MOVE.L  AddrStart, A6
+        MOVE.L  AddrEnd, A1
+        CMP.L   A6, A1
+        BLT     PRINTINVALIDADDRESS  `DRESS
         MOVE.L  #LowerLimit, D0
         CMP.L   A6, D0
         BGT     PRINTINVALIDADDRESS
@@ -140,14 +126,9 @@ NEXT_SCREEN:
         LEA     Continue_Screen, A1
         MOVE.B  #14, D0
         TRAP    #15
-        LEA     YesNoStorage, A1
-        MOVE.B  #2, D0
+        MOVE.B  #5, D0
         TRAP    #15
-        CMP.B   #$59, (A1) * Yes
-        BEQ     AddrLoop
-        CMP.B   #$79, (A1)
-        BEQ     AddrLoop
-        JMP     END
+        JMP     AddrLoop
         
 LOOP
 
@@ -295,6 +276,18 @@ OP0011:
         
 *-> NOT
 OP0100:
+        CMP.L   #$4E71, D2
+        MOVE.L  D2, D7
+        BEQ     NOP_CHECK
+        CMP.L   #$4E75, D2
+        BEQ     RTS_CHECK
+        * FORRR JSR
+        LSR.L   #6, D7
+        CMP.L   #$13A, D7
+        BEQ     JSR_CHECK
+        *============ 
+        
+        
         LEA     NOT_OP, A1
         MOVE.B  #14, D0
         TRAP    #15
@@ -313,6 +306,41 @@ OP0100:
         MULU    #6, D3 * Multiply for JMPTABLE
         LEA     NOT_JMPTable, A2
         JSR     (A2, D3)
+
+RTS_CHECK:
+        LEA     RTS, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JMP     AddrLoop
+
+NOP_CHECK:
+        LEA     NOP, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JMP     AddrLoop
+        
+JSR_CHECK:
+        LEA     JSR, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        LSL.W   #8, D2
+        MOVE.W  D2, D1 * D1 = EA OPMODE
+        LSL.W   #2, D1
+        LSR.W   #8, D1
+        LSR.W   #5, D1
+        MOVE.W  D2, D0 * D0 = EA REGISTER
+        LSL.W   #5, D0
+        LSR.W   #8, D0
+        LSR.W   #5, D0
+
+        JSR     JSR_EACHECKER
+        JMP     AddrLoop
+        
+JSR_EACHECKER:
+        CMP.B   #%0010, D1
+        BEQ     JMPTO_DEST_INDR_ADDR_REG
+        CMP.B   #%0111, D1
+        BEQ     JMPTO_DEST_IMMEDIATE
         
 NOT_JMPTable
         JMP     NOT_SIZE00
@@ -424,8 +452,47 @@ ADDQ_Print_ImmediateCONT:
        
         
 OP0110:
-OP0111:
         
+OP0111:
+        LSL.W   #4, D2
+        MOVE.W  D2, D6 * Shift size
+        LSR.W   #8, D6
+        LSR.W   #5, D6
+        MOVE.W  D2, D3 * L/R
+        LSL.W   #3, D3
+        LSR.W   #8, D3
+        LSR.W   #7, D3
+        MOVE.W  D2, D4 * Size field
+        LSL.W   #4, D4
+        LSR.W   #8, D4
+        LSR.W   #6, D4
+        MOVE.W  D2, D1 *immediate/register
+        LSL.W   #6, D1
+        LSR.W   #8, D1
+        LSR.W   #7, D1
+        MOVE.W  D2, D5 * Shift Register
+        LSL.W   #8, D5
+        LSL.W   #1, D5
+        LSR.W   #8, D5
+        LSR.W   #5, D5
+        MULU    #6, D3
+        LEA     LogicalRotateTable, A1
+        JSR     (A1, D3)
+LogicalRotateTable:
+        JMP     LogicalRotate_RIGHT
+        JMP     LogicalRotate_LEFT
+        
+LogicalRotate_Right
+        LEA     LSR, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JMP     Rotate_Size_Table
+        
+LogicalRotate_Left
+        LEA     LSL, A1
+        MOVE.B  #14, D0
+        TRAP    #15
+        JMP     Rotate_Size_Table
 
 
 
@@ -624,11 +691,13 @@ Rotate_EA
         LEA     SPACER, A1
         MOVE.B  #14, D0
         TRAP    #15
-        MOVE.B  D5, D0
-        MOVE.B  D2, D1
+        MOVE.W  D5, D0
+        MOVE.W  D2, D1
         LSL.W   #6, D1
         LSR.W   #8, D1
         LSR.W   #5, D1
+        JSR     ROTATE_EACHECKER
+        JMP     AddrLoop
         
 ROTATE_EACHECKER:
         CMP.B   #%0010, D1
@@ -647,6 +716,7 @@ Rotate_Print_REGISTER
         JSR     EACHECKER
         MOVE.B  D5, D0
         CLR     D1
+        JSR     PRINTCOMMA
         JSR     DESTEACHECKER
         JMP     AddrLoop
         
@@ -850,6 +920,7 @@ EA:
         LSR.L   #8, D2
         LSR.L   #8, D2
         LSR.L   #4, D2 // 12 bits of opperand found
+        MOVE.L  D2, D2Storage
         MOVE.B  D2, D0 Source Data Register
         LSL.B   #5, D0
         LSR.B   #5, D0
@@ -901,6 +972,7 @@ DESTEACHECKER:
 * POST: PRINTS DEST EA  
 DestEAFinder:
         JSR     PRINTCOMMA  * Prints comma between two operrands
+        MOVE.L  D2Storage, D2
         LSR.L   #6, D2 *Shift away all Source bits, leaving dest and opcode 
         CLR     D1     * Clear D1 and D0 for opperand mode and register
         CLR     D0
@@ -974,7 +1046,7 @@ JMPTO_DEST_INDR_ADDR_REG:
        LEA      INDR_LEFT, A1
        MOVE.B   #14, D0
        TRAP     #15
-       MOVE.B   D3, D0   *TEMP storage for D0 because it will be used by PRINT
+       MOVE.B   D5, D0   *TEMP storage for D0 because it will be used by PRINT
        LEA     AddrREGTABLE, A1
        MULU    #6, D0  * Multiply by 6 bc Each index between jmp table diff is 6
        JSR     (A1, D0) *JMP To index A1 + D0
@@ -1087,7 +1159,7 @@ Address_Immediate:
         BEQ     Immediate_L
         
 Immediate_B:
-        MOVE.B  (A6)+, D1
+        MOVE.W  (A6)+, D1
         MOVE.B  #16, D2
         MOVE.B  #15, D0
         TRAP    #15
@@ -1292,8 +1364,8 @@ WELCOME2    DC.B    'Please enter ending address', CR, LF, 0
 Invalid_EA_ADDR DC.B   'Invalid EA detected', CR, LF, 0
 INVALID_EA_SUB  DC.B    'Invalid SUB OPMODE Detected', CR, LF, 0
 Invalid_Address DC.B    'Given address is Invalid', CR, LF, 0
-Continue_Program    DC.B    'Continue Program? Y/N', CR, LF, 0
-Continue_Screen DC.B    'Continue Screen? Y/N', CR, LF, 0
+Continue_Program    DC.B    'Continue Program? Y/N ', CR, LF, 0
+Continue_Screen DC.B    'Continue Screen? Hit Enter', CR, LF, 0
 Print_NextLine  DC.B    '', CR, LF, 0
 TY_Message  DC.B    'Thank you for using our program', CR, LF, 0
 
@@ -1351,12 +1423,18 @@ OR          DC.B    'OR', 0
 NOT_OP      DC.B    'NOT', 0
 ROL         DC.B    'ROL', 0
 ROR         DC.B    'ROR', 0
-
+LSL         DC.B    'LSL', 0
+LSR         DC.B    'LSR', 0
+NOP         DC.B    'NOP ', 0
+JSR         DC.B    'JSR ', 0
+RTS         DC.B    'RTS', 0
 addrStart   DC.L    1   // Starting address
 addrEnd     DC.L    1   // ending address
 OpCodeStorage DC.L    1
 ScreenCounter   DC.L    1
 OpCodeSize  DC.L    1
+D2Storage   DC.L    1
+
     END    START        ; last line of source
 
 
